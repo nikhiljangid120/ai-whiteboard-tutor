@@ -170,7 +170,7 @@ npm run start
 
 ## 🌐 Live Demo & Submission Links
 
-- **Live Demo**: *[Deploying to Vercel]*
-- **GitHub Repository**: Complete source code
+- **Live Demo**: [https://ai-whiteboard-tutor-zeta.vercel.app](https://ai-whiteboard-tutor-zeta.vercel.app)
+- **GitHub Repository**: [https://github.com/nikhiljangid120/ai-whiteboard-tutor](https://github.com/nikhiljangid120/ai-whiteboard-tutor)
 - **Author**: Nikhil Jangid (<nikhiljangid343@gmail.com>)
 - **Submission Form**: [Braynix Studios Submission](https://docs.google.com/forms/d/e/1FAIpQLSdFJoTxMEuFZrCHTbEgv7bbg2uLf33SjP7n0w2qUONR4kMRcA/viewform)
