@@ -215,7 +215,7 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
                 <Sparkles className="w-3 h-3 text-cyan-400" />
                 <span>Suggested Follow-ups:</span>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 {suggestedQuestions.map((q, idx) => (
                   <button
                     key={idx}

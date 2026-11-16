@@ -535,16 +535,27 @@ function renderAction(
   const defaultStroke = isDark ? '#f8fafc' : '#0f172a';
   const defaultText = isDark ? '#f1f5f9' : '#0f172a';
 
+  // Smooth cubic ease-out for fluid physics-based entrance
+  const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+  // Safe vertical margin below the top floating command bar
+  const safeYOffset = 30;
+
   switch (action.type) {
     case 'title': {
       const text = action.text || '';
-      const y = action.y || 45;
+      const y = Math.max((action.y || 50) + safeYOffset, 80);
       const fontSize = action.fontSize || 24;
 
+      ctx.save();
       ctx.font = `800 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = action.color || (isDark ? '#38bdf8' : '#2563eb');
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
+      if (isDark) {
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.35)';
+        ctx.shadowBlur = 10;
+      }
       ctx.fillText(text, 60, y);
 
       // Glowing Neon underline accent
@@ -552,31 +563,43 @@ function renderAction(
       ctx.lineWidth = 3.5;
       ctx.strokeStyle = action.color || (isDark ? '#38bdf8' : '#2563eb');
       ctx.moveTo(60, y + fontSize * 0.7);
-      ctx.lineTo(60 + Math.min(ctx.measureText(text).width * progress, 400), y + fontSize * 0.7);
+      ctx.lineTo(60 + Math.min(ctx.measureText(text).width * easeProgress, 460), y + fontSize * 0.7);
       ctx.stroke();
+      ctx.restore();
       break;
     }
 
     case 'text': {
       const text = action.text || '';
       const x = action.x || 80;
-      const y = action.y || 100;
+      const y = (action.y || 100) + (action.y && action.y < 85 ? safeYOffset : 0);
       const fontSize = action.fontSize || 16;
+      const offsetY = (1 - easeProgress) * 5;
 
+      ctx.save();
       ctx.font = `${action.bold ? '700' : '500'} ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.fillStyle = action.color || defaultText;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(text, x, y);
+      ctx.fillText(text, x, y + offsetY);
+      ctx.restore();
       break;
     }
 
     case 'box': {
       const x = action.x || 80;
-      const y = action.y || 100;
+      const rawY = action.y || 100;
+      const y = rawY < 85 ? rawY + safeYOffset : rawY;
       const w = action.width || 180;
       const h = action.height || 100;
       const radius = 14;
+
+      ctx.save();
+      // Smooth subtle spring scale
+      const scale = 0.95 + 0.05 * easeProgress;
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.scale(scale, scale);
+      ctx.translate(-(x + w / 2), -(y + h / 2));
 
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, radius);
@@ -588,6 +611,10 @@ function renderAction(
 
       ctx.lineWidth = action.strokeWidth || 2;
       ctx.strokeStyle = action.stroke || defaultStroke;
+      if (isDark) {
+        ctx.shadowColor = action.stroke || 'rgba(56, 189, 248, 0.25)';
+        ctx.shadowBlur = 8;
+      }
       if (action.dashed) {
         ctx.setLineDash([6, 5]);
       } else {
@@ -595,6 +622,7 @@ function renderAction(
       }
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
 
       if (action.label) {
         ctx.font = '700 14px system-ui, -apple-system, sans-serif';
@@ -603,13 +631,21 @@ function renderAction(
         ctx.textBaseline = 'middle';
         ctx.fillText(action.label, x + w / 2, y + 22);
       }
+      ctx.restore();
       break;
     }
 
     case 'circle': {
       const x = action.x || 200;
-      const y = action.y || 200;
+      const rawY = action.y || 200;
+      const y = rawY < 85 ? rawY + safeYOffset : rawY;
       const r = action.radius || 40;
+
+      ctx.save();
+      const scale = 0.95 + 0.05 * easeProgress;
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.translate(-x, -y);
 
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -621,7 +657,12 @@ function renderAction(
 
       ctx.lineWidth = action.strokeWidth || 2.5;
       ctx.strokeStyle = action.stroke || defaultStroke;
+      if (isDark) {
+        ctx.shadowColor = action.stroke || 'rgba(56, 189, 248, 0.25)';
+        ctx.shadowBlur = 8;
+      }
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       if (action.label) {
         ctx.font = '700 14px system-ui, -apple-system, sans-serif';
@@ -630,18 +671,21 @@ function renderAction(
         ctx.textBaseline = 'middle';
         ctx.fillText(action.label, x, y);
       }
+      ctx.restore();
       break;
     }
 
     case 'arrow': {
       const fx = action.fromX || 100;
-      const fy = action.fromY || 100;
+      const rawFy = action.fromY || 100;
+      const fy = rawFy < 85 ? rawFy + safeYOffset : rawFy;
       const tx = action.toX || 250;
-      const ty = action.toY || 100;
+      const rawTy = action.toY || 100;
+      const ty = rawTy < 85 ? rawTy + safeYOffset : rawTy;
       const color = action.color || (isDark ? '#38bdf8' : '#0284c7');
 
-      const curTx = fx + (tx - fx) * progress;
-      const curTy = fy + (ty - fy) * progress;
+      const curTx = fx + (tx - fx) * easeProgress;
+      const curTy = fy + (ty - fy) * easeProgress;
 
       const angle = Math.atan2(curTy - fy, curTx - fx);
       const headlen = 11;
@@ -653,7 +697,7 @@ function renderAction(
       ctx.lineTo(curTx, curTy);
       ctx.stroke();
 
-      if (progress > 0.8) {
+      if (easeProgress > 0.8) {
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.moveTo(curTx, curTy);
@@ -669,7 +713,7 @@ function renderAction(
         ctx.fill();
       }
 
-      if (action.label && progress > 0.5) {
+      if (action.label && easeProgress > 0.4) {
         const midX = (fx + tx) / 2;
         const midY = (fy + ty) / 2 - 14;
 

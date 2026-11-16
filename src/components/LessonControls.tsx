@@ -200,7 +200,7 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
       </div>
 
       {/* 3. Scene Chapter Navigation Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none border-t border-white/5">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-white/5">
         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
           <Layers className="w-3.5 h-3.5 text-cyan-400" />
           Scenes:

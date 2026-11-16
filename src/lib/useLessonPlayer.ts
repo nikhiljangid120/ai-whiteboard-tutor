@@ -29,6 +29,7 @@ export function useLessonPlayer(lesson: Lesson | null) {
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isPlayingRef = useRef<boolean>(false);
   const currentTimeRef = useRef<number>(0);
+  const playbackRateRef = useRef<number>(1);
 
   // Keep refs in sync for animation loop
   useEffect(() => {
@@ -38,6 +39,10 @@ export function useLessonPlayer(lesson: Lesson | null) {
   useEffect(() => {
     currentTimeRef.current = currentTime;
   }, [currentTime]);
+
+  useEffect(() => {
+    playbackRateRef.current = playbackRate;
+  }, [playbackRate]);
 
   // Compute total duration and scene boundary timestamps
   const { totalDuration, sceneOffsets } = useMemo(() => {
@@ -88,7 +93,6 @@ export function useLessonPlayer(lesson: Lesson | null) {
 
       const updateVoices = () => {
         const voices = window.speechSynthesis.getVoices();
-        // Prefer natural English voices
         const preferred = voices.find(
           (v) =>
             v.lang.startsWith('en') &&
@@ -115,9 +119,9 @@ export function useLessonPlayer(lesson: Lesson | null) {
     currentUtteranceRef.current = null;
   }, []);
 
-  // Speak a scene's narration
+  // Speak a scene's narration with optional custom rate
   const speakSceneNarration = useCallback(
-    (scene: LessonScene, startOffsetSeconds: number = 0) => {
+    (scene: LessonScene, startOffsetSeconds: number = 0, rateOverride?: number) => {
       if (!isVoiceSupported || isMuted || typeof window === 'undefined') return;
 
       stopSpeech();
@@ -136,8 +140,9 @@ export function useLessonPlayer(lesson: Lesson | null) {
 
       if (!spokenText.trim()) return;
 
+      const rateToUse = rateOverride !== undefined ? rateOverride : playbackRateRef.current;
       const utterance = new SpeechSynthesisUtterance(spokenText);
-      utterance.rate = playbackRate;
+      utterance.rate = rateToUse;
       utterance.pitch = 1.0;
 
       // Select good voice
@@ -156,9 +161,14 @@ export function useLessonPlayer(lesson: Lesson | null) {
       }
 
       currentUtteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      // Chrome Windows SpeechSynthesis requires a tiny timeout after cancel() to avoid dropped utterances
+      setTimeout(() => {
+        if (isPlayingRef.current && !isMuted) {
+          window.speechSynthesis.speak(utterance);
+        }
+      }, 25);
     },
-    [isVoiceSupported, isMuted, playbackRate, stopSpeech]
+    [isVoiceSupported, isMuted, stopSpeech]
   );
 
   // Scene transition watcher: when scene changes while playing, speak new narration
@@ -188,7 +198,7 @@ export function useLessonPlayer(lesson: Lesson | null) {
         lastTickTimeRef.current = timestamp;
       }
 
-      const deltaSeconds = ((timestamp - lastTickTimeRef.current) / 1000) * playbackRate;
+      const deltaSeconds = ((timestamp - lastTickTimeRef.current) / 1000) * playbackRateRef.current;
       lastTickTimeRef.current = timestamp;
 
       setCurrentTime((prevTime) => {
@@ -211,7 +221,7 @@ export function useLessonPlayer(lesson: Lesson | null) {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isPlaying, playbackRate, totalDuration, stopSpeech]);
+  }, [isPlaying, totalDuration, stopSpeech]);
 
   // Playback actions
   const play = useCallback(() => {
@@ -242,7 +252,6 @@ export function useLessonPlayer(lesson: Lesson | null) {
       const clamped = Math.max(0, Math.min(seconds, totalDuration));
       setCurrentTime(clamped);
 
-      // Find scene for target time
       const targetScene = sceneOffsets.find((s) => clamped >= s.start && clamped < s.end);
       if (targetScene && lesson?.scenes[targetScene.index]) {
         const offsetInScene = clamped - targetScene.start;
@@ -279,6 +288,19 @@ export function useLessonPlayer(lesson: Lesson | null) {
       speakSceneNarration(lesson.scenes[0], 0);
     }
   }, [lesson, speakSceneNarration, stopSpeech]);
+
+  // Instant Speed Change mid-playback
+  const changeSpeed = useCallback(
+    (newRate: number) => {
+      setPlaybackRate(newRate);
+      playbackRateRef.current = newRate;
+      if (isPlaying && currentScene) {
+        // Immediately restart speech at current progress with new speed rate
+        speakSceneNarration(currentScene, sceneElapsedTime, newRate);
+      }
+    },
+    [isPlaying, currentScene, sceneElapsedTime, speakSceneNarration]
+  );
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
@@ -318,7 +340,7 @@ export function useLessonPlayer(lesson: Lesson | null) {
     jumpScene,
     skip,
     restart,
-    setPlaybackRate,
+    setPlaybackRate: changeSpeed,
     toggleMute
   };
 }

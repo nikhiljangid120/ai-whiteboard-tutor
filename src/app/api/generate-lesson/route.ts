@@ -97,8 +97,17 @@ export async function POST(req: NextRequest) {
     const lowerTopic = cleanTopic.toLowerCase();
 
     // Check if the user is asking for one of our preset flagship topics
-    if (lowerTopic.includes('binary search')) {
+    if (lowerTopic.includes('typescript')) {
+      return NextResponse.json({ lesson: SAMPLE_LESSONS['typescript'], source: 'curated' });
+    }
+    if (lowerTopic.includes('binary search') || (lowerTopic.includes('binary') && !lowerTopic.includes('tree'))) {
       return NextResponse.json({ lesson: SAMPLE_LESSONS['binary-search'], source: 'curated' });
+    }
+    if (lowerTopic.includes('neural') || lowerTopic.includes('backprop')) {
+      return NextResponse.json({ lesson: SAMPLE_LESSONS['neural-networks'], source: 'curated' });
+    }
+    if (lowerTopic.includes('tcp') || lowerTopic.includes('handshake')) {
+      return NextResponse.json({ lesson: SAMPLE_LESSONS['tcp-handshake'], source: 'curated' });
     }
     if (lowerTopic.includes('photosynthesis')) {
       return NextResponse.json({ lesson: SAMPLE_LESSONS['photosynthesis'], source: 'curated' });

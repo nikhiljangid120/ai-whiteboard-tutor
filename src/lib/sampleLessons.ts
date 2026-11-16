@@ -488,5 +488,123 @@ export const SAMPLE_LESSONS: Record<string, Lesson> = {
       'Can the Pythagorean theorem be used for triangles that are not right-angled?',
       'How does the distance formula in coordinate geometry derive from this theorem?'
     ]
+  },
+
+  'typescript': {
+    id: 'sample-typescript',
+    topic: 'TypeScript',
+    title: 'TypeScript: JavaScript with Superpowers',
+    overview: 'Learn how TypeScript brings compile-time safety, interfaces, and self-documenting types to modern JavaScript development.',
+    totalDuration: 110,
+    scenes: [
+      {
+        id: 1,
+        title: 'Dynamic JS Bugs vs Static Typing',
+        duration: 20,
+        narration: 'Welcome to this visual deep dive into TypeScript. Plain JavaScript is dynamically typed, meaning errors like TypeError: Cannot read property of undefined only explode at runtime in front of your users. TypeScript catches those bugs right inside your editor.',
+        keyConcept: 'TypeScript catches errors at compile time before your code ever runs in production.',
+        actions: [
+          { type: 'title', timeOffset: 0, text: 'JavaScript vs TypeScript', fontSize: 26, color: '#38bdf8', y: 80 },
+          { type: 'box', timeOffset: 2, x: 80, y: 130, width: 280, height: 160, stroke: '#f87171', fill: 'rgba(239, 68, 68, 0.1)', label: 'Plain JavaScript (Dynamic)' },
+          { type: 'text', timeOffset: 4, text: '• Types checked at Runtime', fontSize: 13, color: '#fca5a5', x: 95, y: 190 },
+          { type: 'text', timeOffset: 6, text: '• "undefined is not a function"', fontSize: 13, color: '#f87171', bold: true, x: 95, y: 220 },
+          { type: 'text', timeOffset: 8, text: '• Bugs escape into Production', fontSize: 13, color: '#fca5a5', x: 95, y: 250 },
+          { type: 'box', timeOffset: 10, x: 420, y: 130, width: 280, height: 160, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'TypeScript (Static)' },
+          { type: 'text', timeOffset: 12, text: '• Types checked at Compile time', fontSize: 13, color: '#7dd3fc', x: 435, y: 190 },
+          { type: 'text', timeOffset: 14, text: '• Red squiggly line in VS Code', fontSize: 13, color: '#38bdf8', bold: true, x: 435, y: 220 },
+          { type: 'text', timeOffset: 16, text: '• Self-documenting Autocomplete', fontSize: 13, color: '#7dd3fc', x: 435, y: 250 },
+          { type: 'badge', timeOffset: 18, text: 'TypeScript = JavaScript + Type System', bgColor: 'rgba(56, 189, 248, 0.2)', textColor: '#38bdf8', x: 240, y: 320 }
+        ]
+      },
+      {
+        id: 2,
+        title: 'Type Annotations & Inference',
+        duration: 22,
+        narration: 'Adding types is simple. You can explicitly annotate variables using a colon, or let TypeScript automatically infer the type based on the initial value assigned.',
+        keyConcept: 'Explicit typing uses colons (name: string), while inference deduces types automatically.',
+        actions: [
+          { type: 'title', timeOffset: 0, text: 'Type Annotations & Inference', fontSize: 24, color: '#60a5fa', y: 80 },
+          {
+            type: 'equation',
+            timeOffset: 2,
+            text: 'let username: string = "Nikhil";',
+            subtext: 'Explicit type annotation enforces string values only',
+            x: 80,
+            y: 130
+          },
+          {
+            type: 'equation',
+            timeOffset: 6,
+            text: 'let score = 95;  // inferred as number',
+            subtext: 'Type Inference automatically prevents score = "A+"',
+            x: 80,
+            y: 220
+          },
+          { type: 'badge', timeOffset: 12, text: 'Primitives: string | number | boolean | symbol', bgColor: 'rgba(96, 165, 250, 0.15)', textColor: '#93c5fd', x: 80, y: 310 }
+        ]
+      },
+      {
+        id: 3,
+        title: 'Interfaces and Contracts',
+        duration: 24,
+        narration: 'For complex objects, TypeScript provides Interfaces. An interface defines the exact shape of an object: which fields are required, which are optional, and their respective types.',
+        keyConcept: 'Interfaces define data contracts that objects and function arguments must satisfy.',
+        actions: [
+          { type: 'title', timeOffset: 0, text: 'Interfaces: Shaping Objects', fontSize: 24, color: '#34d399', y: 80 },
+          {
+            type: 'box',
+            timeOffset: 2,
+            x: 80,
+            y: 130,
+            width: 320,
+            height: 170,
+            stroke: '#34d399',
+            fill: 'rgba(52, 211, 153, 0.1)',
+            label: 'interface UserContract'
+          },
+          { type: 'text', timeOffset: 4, text: 'id: number;', fontSize: 14, color: '#a7f3d0', x: 105, y: 190 },
+          { type: 'text', timeOffset: 6, text: 'name: string;', fontSize: 14, color: '#a7f3d0', x: 105, y: 220 },
+          { type: 'text', timeOffset: 8, text: 'role: "admin" | "member";', fontSize: 14, color: '#f59e0b', bold: true, x: 105, y: 250 },
+          { type: 'arrow', timeOffset: 12, fromX: 410, fromY: 215, toX: 490, toY: 215, label: 'implements', color: '#34d399' },
+          { type: 'box', timeOffset: 14, x: 500, y: 170, width: 220, height: 90, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'const adminUser: User' },
+          { type: 'badge', timeOffset: 17, text: 'Union types like "admin" | "member" eliminate invalid states', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 320 }
+        ]
+      },
+      {
+        id: 4,
+        title: 'The TypeScript Compiler (TSC) Pipeline',
+        duration: 24,
+        narration: 'Browsers cannot execute TypeScript directly. The TypeScript compiler, TSC, performs a two-step process: First, it runs comprehensive type checks. Second, it erases the types and emits clean, standard JavaScript that runs in any browser or Node runtime.',
+        keyConcept: 'TSC checks types, strips them away, and emits universal JavaScript.',
+        actions: [
+          { type: 'title', timeOffset: 0, text: 'The Compilation Pipeline', fontSize: 24, color: '#818cf8', y: 80 },
+          { type: 'box', timeOffset: 2, x: 80, y: 150, width: 150, height: 100, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.15)', label: 'app.ts (TypeScript)' },
+          { type: 'arrow', timeOffset: 5, fromX: 240, fromY: 200, toX: 340, toY: 200, label: 'tsc', color: '#818cf8' },
+          { type: 'circle', timeOffset: 7, x: 410, y: 200, radius: 55, stroke: '#f59e0b', fill: 'rgba(245, 158, 11, 0.15)', label: 'Type Checker' },
+          { type: 'arrow', timeOffset: 11, fromX: 475, fromY: 200, toX: 575, toY: 200, label: 'emit JS', color: '#10b981' },
+          { type: 'box', timeOffset: 13, x: 585, y: 150, width: 150, height: 100, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.15)', label: 'bundle.js (Browser)' },
+          { type: 'badge', timeOffset: 17, text: 'Zero Runtime Overhead: Types disappear during build!', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 180, y: 310 }
+        ]
+      },
+      {
+        id: 5,
+        title: 'Summary & Best Practices',
+        duration: 20,
+        narration: 'To wrap up: TypeScript gives you the speed of JavaScript with the safety of a compiled language. Enable strict mode in your tsconfig, leverage generics for reusable code, and let types supercharge your workflow.',
+        keyConcept: 'Always enable "strict": true in tsconfig.json for maximum reliability.',
+        actions: [
+          { type: 'title', timeOffset: 0, text: 'TypeScript Master Checklist', fontSize: 24, color: '#f8fafc', y: 80 },
+          { type: 'badge', timeOffset: 2, text: '1. "strict": true — Catch null and undefined issues', bgColor: 'rgba(56, 189, 248, 0.15)', textColor: '#38bdf8', x: 80, y: 140 },
+          { type: 'badge', timeOffset: 6, text: '2. Avoid "any" — Use "unknown" when input is untrusted', bgColor: 'rgba(239, 68, 68, 0.15)', textColor: '#f87171', x: 80, y: 190 },
+          { type: 'badge', timeOffset: 10, text: '3. Generics <T> — Build flexible, reusable data structures', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 240 },
+          { type: 'badge', timeOffset: 14, text: '4. Full Next.js & React support out of the box!', bgColor: 'rgba(52, 211, 153, 0.15)', textColor: '#34d399', x: 80, y: 290 }
+        ]
+      }
+    ],
+    suggestedQuestions: [
+      'What is the difference between an Interface and a Type Alias in TypeScript?',
+      'Why is "unknown" safer to use than "any"?',
+      'How does TypeScript handle generic constraints like <T extends object>?'
+    ]
   }
 };
