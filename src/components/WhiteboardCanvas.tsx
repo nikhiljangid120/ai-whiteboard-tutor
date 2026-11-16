@@ -716,11 +716,12 @@ function renderAction(
           ctx.fill();
         });
 
-        ctx.font = '700 12.5px system-ui, -apple-system, sans-serif';
+        // Label starts comfortably to the right of dots, preventing any collision
+        ctx.font = '700 12px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = action.stroke || defaultStroke;
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(action.label, x + w / 2, y + 14);
+        ctx.fillText(action.label, x + 42, y + 14);
       }
       ctx.restore();
       break;
@@ -802,39 +803,16 @@ function renderAction(
         );
         ctx.closePath();
         ctx.fill();
-
-        // High-Tech Animated Packet / Signal Pulse Flowing Along Wire
-        const packetT = ((tick * 0.025) % 1);
-        const px = fx + (tx - fx) * packetT;
-        const py = fy + (ty - fy) * packetT;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 10;
-        ctx.fill();
-
-        // Glowing particle tail
-        const tailX = px - Math.cos(angle) * 7;
-        const tailY = py - Math.sin(angle) * 7;
-        ctx.beginPath();
-        ctx.arc(tailX, tailY, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.restore();
       }
 
       if (action.label && easeProgress > 0.4) {
         const midX = (fx + tx) / 2;
-        const midY = (fy + ty) / 2 - 14;
+        const midY = (fy + ty) / 2 - 18;
 
         ctx.font = '600 12px system-ui, -apple-system, sans-serif';
         const labelWidth = ctx.measureText(action.label).width + 16;
 
-        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+        ctx.fillStyle = isDark ? '#090d16' : '#ffffff';
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.beginPath();

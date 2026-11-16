@@ -168,49 +168,56 @@ export const SAMPLE_LESSONS: Record<string, Lesson> = {
     topic: 'How Neural Networks Learn',
     title: 'Inside Deep Learning: Neurons, Weights & Backprop',
     overview: 'Visualize how artificial neurons multiply inputs by weights, add bias, activate, and iteratively minimize loss via gradient descent.',
-    totalDuration: 115,
+    totalDuration: 62,
     scenes: [
       {
         id: 1,
         title: 'The Biological Analogy & Artificial Neuron',
-        duration: 22,
+        duration: 15,
         narration: 'Welcome to this visual walkthrough on neural networks. At the heart of modern AI is the artificial neuron. It takes multiple numeric inputs, multiplies each by a learnable weight, adds a bias term, and passes the sum through an activation function.',
         keyConcept: 'Neuron equation: y = Activation( (Input1 * Weight1) + (Input2 * Weight2) + Bias )',
         actions: [
-          { type: 'title', timeOffset: 0, text: 'The Perceptron: Single Neuron Model', fontSize: 26, color: '#a855f7', y: 40 },
-          { type: 'circle', timeOffset: 2, x: 120, y: 140, radius: 24, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'x₁' },
-          { type: 'circle', timeOffset: 3, x: 120, y: 240, radius: 24, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'x₂' },
-          { type: 'circle', timeOffset: 5, x: 340, y: 190, radius: 45, stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.15)', label: 'Σ + Bias' },
-          { type: 'arrow', timeOffset: 7, fromX: 148, fromY: 140, toX: 295, toY: 175, label: 'w₁ = 0.8', color: '#38bdf8' },
-          { type: 'arrow', timeOffset: 8, fromX: 148, fromY: 240, toX: 295, toY: 205, label: 'w₂ = -0.4', color: '#38bdf8' },
-          { type: 'arrow', timeOffset: 12, fromX: 390, fromY: 190, toX: 490, toY: 190, label: 'f(z)', color: '#a855f7' },
-          { type: 'box', timeOffset: 14, x: 500, y: 155, width: 140, height: 70, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'ReLU / Sigmoid' },
-          { type: 'badge', timeOffset: 18, text: 'Output: Final Prediction ŷ', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 500, y: 260 }
+          { type: 'title', timeOffset: 0, text: 'The Perceptron: Single Neuron Model', fontSize: 24, color: '#a855f7', y: 40 },
+          { type: 'circle', timeOffset: 1, x: 120, y: 140, radius: 24, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'x₁' },
+          { type: 'circle', timeOffset: 2, x: 120, y: 240, radius: 24, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'x₂' },
+          { type: 'circle', timeOffset: 4, x: 340, y: 190, radius: 45, stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.15)', label: 'Σ + Bias' },
+          { type: 'arrow', timeOffset: 6, fromX: 148, fromY: 140, toX: 295, toY: 175, label: 'w₁ = 0.8', color: '#38bdf8' },
+          { type: 'arrow', timeOffset: 7, fromX: 148, fromY: 240, toX: 295, toY: 205, label: 'w₂ = -0.4', color: '#38bdf8' },
+          { type: 'arrow', timeOffset: 9, fromX: 390, fromY: 190, toX: 490, toY: 190, label: 'f(z)', color: '#a855f7' },
+          { type: 'box', timeOffset: 11, x: 500, y: 155, width: 150, height: 70, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Activation' },
+          { type: 'badge', timeOffset: 13, text: 'Output: Final Prediction ŷ', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 500, y: 250 }
         ]
       },
       {
         id: 2,
         title: 'The Multi-Layer Architecture',
-        duration: 25,
+        duration: 16,
         narration: 'Single neurons are combined into layers: an Input Layer, multiple Hidden Layers that extract abstract features, and an Output Layer. In computer vision, early layers detect edges, middle layers recognize textures and shapes, and deep layers identify full objects.',
         keyConcept: 'Deep networks build hierarchical representations through layered transformations.',
         actions: [
           { type: 'title', timeOffset: 0, text: 'Deep Architecture: Hidden Layers', fontSize: 24, color: '#38bdf8', y: 40 },
-          { type: 'box', timeOffset: 2, x: 80, y: 100, width: 120, height: 180, stroke: '#64748b', fill: 'rgba(100, 116, 139, 0.1)', label: 'Input Layer' },
-          { type: 'text', timeOffset: 4, text: 'Pixels / Raw Data', fontSize: 13, color: '#94a3b8', x: 92, y: 190 },
-          { type: 'arrow', timeOffset: 6, fromX: 205, fromY: 190, toX: 265, toY: 190, label: 'W¹', color: '#818cf8' },
-          { type: 'box', timeOffset: 8, x: 270, y: 80, width: 150, height: 220, stroke: '#818cf8', fill: 'rgba(129, 140, 248, 0.1)', label: 'Hidden Layers' },
-          { type: 'text', timeOffset: 10, text: 'Edges ⟶ Shapes', fontSize: 13, color: '#c7d2fe', x: 295, y: 180 },
-          { type: 'text', timeOffset: 12, text: 'Feature Abstraction', fontSize: 13, color: '#818cf8', x: 288, y: 210 },
-          { type: 'arrow', timeOffset: 15, fromX: 425, fromY: 190, toX: 485, toY: 190, label: 'W²', color: '#10b981' },
-          { type: 'box', timeOffset: 17, x: 490, y: 110, width: 130, height: 160, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Output Layer' },
-          { type: 'text', timeOffset: 19, text: 'Probabilities [0..1]', fontSize: 13, color: '#34d399', x: 500, y: 190 }
+          { type: 'box', timeOffset: 1, x: 60, y: 95, width: 175, height: 185, stroke: '#64748b', fill: 'rgba(100, 116, 139, 0.1)', label: 'Input Layer' },
+          { type: 'text', timeOffset: 2, text: '• Pixels / Raw Signals', fontSize: 13, color: '#94a3b8', x: 75, y: 160 },
+          { type: 'text', timeOffset: 3, text: '• Normalized [0, 1]', fontSize: 13, color: '#94a3b8', x: 75, y: 190 },
+          { type: 'badge', timeOffset: 4, text: 'Features (x₁, x₂)', bgColor: 'rgba(100, 116, 139, 0.2)', textColor: '#94a3b8', x: 75, y: 235 },
+          { type: 'arrow', timeOffset: 4.5, fromX: 240, fromY: 185, toX: 305, toY: 185, label: 'W¹', color: '#818cf8' },
+          { type: 'box', timeOffset: 5, x: 310, y: 80, width: 185, height: 215, stroke: '#818cf8', fill: 'rgba(129, 140, 248, 0.1)', label: 'Hidden Layers' },
+          { type: 'text', timeOffset: 6, text: '• Edges ⟶ Textures', fontSize: 13, color: '#818cf8', x: 325, y: 150 },
+          { type: 'text', timeOffset: 7, text: '• Shape Abstraction', fontSize: 13, color: '#818cf8', x: 325, y: 180 },
+          { type: 'text', timeOffset: 8, text: '• ReLU Activation', fontSize: 13, bold: true, color: '#a78bfa', x: 325, y: 210 },
+          { type: 'badge', timeOffset: 9, text: 'Latent Space', bgColor: 'rgba(129, 140, 248, 0.2)', textColor: '#a78bfa', x: 325, y: 250 },
+          { type: 'arrow', timeOffset: 9.5, fromX: 500, fromY: 185, toX: 565, toY: 185, label: 'W²', color: '#10b981' },
+          { type: 'box', timeOffset: 10, x: 570, y: 95, width: 175, height: 185, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Output Layer' },
+          { type: 'text', timeOffset: 11, text: '• Cat: 92.4%', fontSize: 13, bold: true, color: '#10b981', x: 585, y: 160 },
+          { type: 'text', timeOffset: 12, text: '• Dog: 5.1%', fontSize: 13, color: '#94a3b8', x: 585, y: 190 },
+          { type: 'text', timeOffset: 13, text: '• Bird: 2.5%', fontSize: 13, color: '#94a3b8', x: 585, y: 215 },
+          { type: 'badge', timeOffset: 14, text: 'Softmax Output ŷ', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 585, y: 245 }
         ]
       },
       {
         id: 3,
         title: 'Loss Functions and Gradient Descent',
-        duration: 25,
+        duration: 16,
         narration: 'How does the network actually learn? We compare its output with the true label using a Loss Function. The gradient of the loss tells us which direction to nudge every single weight to reduce error. We take small steps down the error hill: Gradient Descent.',
         keyConcept: 'Weight update formula: W_new = W_old - (LearningRate * dLoss/dW)',
         actions: [
@@ -225,28 +232,28 @@ export const SAMPLE_LESSONS: Record<string, Lesson> = {
           },
           {
             type: 'equation',
-            timeOffset: 7,
+            timeOffset: 6,
             text: 'W_new = W_old - η · (∂Loss / ∂W)',
             subtext: 'η (eta) = Learning Rate (e.g. 0.001)',
             x: 80,
             y: 180
           },
-          { type: 'badge', timeOffset: 12, text: 'Backpropagation: The Chain Rule of Calculus', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 280 },
-          { type: 'arrow', timeOffset: 16, fromX: 520, fromY: 280, toX: 350, toY: 280, label: 'Gradients flow backward ⟵', color: '#f87171' }
+          { type: 'badge', timeOffset: 10, text: 'Backpropagation: The Chain Rule of Calculus', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 280 },
+          { type: 'arrow', timeOffset: 12, fromX: 520, fromY: 280, toX: 350, toY: 280, label: 'Gradients flow backward ⟵', color: '#f87171' }
         ]
       },
       {
         id: 4,
         title: 'Summary: Forward Pass vs Backprop',
-        duration: 20,
+        duration: 15,
         narration: 'In summary, learning consists of two repeating cycles: First, the forward pass computes predictions. Second, backpropagation calculates gradients and updates weights. Repeated over millions of examples, the network converges on superhuman accuracy.',
         keyConcept: 'Forward Pass computes predictions; Backward Pass updates weights.',
         actions: [
           { type: 'title', timeOffset: 0, text: 'The Training Loop Summary', fontSize: 24, color: '#f8fafc', y: 40 },
           { type: 'badge', timeOffset: 2, text: '1. Forward Pass: Input ⟶ Activation ⟶ Output', bgColor: 'rgba(56, 189, 248, 0.15)', textColor: '#38bdf8', x: 80, y: 100 },
-          { type: 'badge', timeOffset: 6, text: '2. Compute Loss: Measure prediction mistake', bgColor: 'rgba(239, 68, 68, 0.15)', textColor: '#f87171', x: 80, y: 150 },
-          { type: 'badge', timeOffset: 10, text: '3. Backprop: Propagate error via calculus chain rule', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 200 },
-          { type: 'badge', timeOffset: 14, text: '4. Update Weights: Repeat for thousands of epochs', bgColor: 'rgba(52, 211, 153, 0.15)', textColor: '#34d399', x: 80, y: 250 }
+          { type: 'badge', timeOffset: 5, text: '2. Compute Loss: Measure prediction mistake', bgColor: 'rgba(239, 68, 68, 0.15)', textColor: '#f87171', x: 80, y: 150 },
+          { type: 'badge', timeOffset: 8, text: '3. Backprop: Propagate error via calculus chain rule', bgColor: 'rgba(245, 158, 11, 0.15)', textColor: '#fbbf24', x: 80, y: 200 },
+          { type: 'badge', timeOffset: 11, text: '4. Update Weights: Repeat for thousands of epochs', bgColor: 'rgba(52, 211, 153, 0.15)', textColor: '#34d399', x: 80, y: 250 }
         ]
       }
     ],
