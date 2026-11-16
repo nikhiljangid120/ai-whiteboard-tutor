@@ -9,7 +9,8 @@ import {
   VolumeX,
   FastForward,
   Rewind,
-  Sparkles
+  Sparkles,
+  Layers
 } from 'lucide-react';
 import { LessonScene } from '@/types/lesson';
 
@@ -57,33 +58,38 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
   const progressPercent = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
   return (
-    <div className="w-full flex flex-col gap-3 p-4 md:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg">
-      {/* 1. Timeline Scrubber with Scene Chapter Markers */}
+    <div className="w-full flex flex-col gap-3.5 p-4 sm:p-5 rounded-3xl bg-slate-900/90 dark:bg-slate-950/90 text-white backdrop-blur-2xl border border-white/10 shadow-2xl transition-all">
+      {/* 1. Neon Scrubber Bar with Scene Flags */}
       <div className="flex flex-col gap-1.5">
-        <div className="relative w-full h-3 group cursor-pointer flex items-center">
-          {/* Progress bar background */}
-          <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative border border-slate-200/50 dark:border-slate-700/50">
-            {/* Filled progress */}
+        <div className="relative w-full h-4 group cursor-pointer flex items-center">
+          {/* Track background */}
+          <div className="w-full h-2.5 bg-slate-800/80 rounded-full overflow-hidden relative border border-white/5">
+            {/* Filled glowing progress */}
             <div
-              className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 transition-all duration-75"
+              className="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 shadow-[0_0_12px_rgba(56,189,248,0.5)] transition-all duration-75 relative"
               style={{ width: `${progressPercent}%` }}
-            />
+            >
+              <span className="absolute right-0 top-0 bottom-0 w-2 bg-white/80 rounded-full shadow-[0_0_8px_white]" />
+            </div>
           </div>
 
           {/* Chapter divider ticks */}
           {sceneOffsets.map((offset, i) => {
             if (i === 0) return null;
             const leftPct = (offset.start / totalDuration) * 100;
+            const isPassed = currentTime >= offset.start;
             return (
               <div
                 key={i}
-                className="absolute top-0 bottom-0 w-[2px] bg-slate-300 dark:bg-slate-600 pointer-events-none"
+                className={`absolute top-0 bottom-0 w-[2px] pointer-events-none transition-colors ${
+                  isPassed ? 'bg-cyan-400/80 shadow-[0_0_6px_rgba(56,189,248,0.8)]' : 'bg-slate-700'
+                }`}
                 style={{ left: `${leftPct}%` }}
               />
             );
           })}
 
-          {/* Range input slider */}
+          {/* Hidden range input */}
           <input
             type="range"
             min={0}
@@ -92,44 +98,48 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
             value={currentTime}
             onChange={(e) => onSeek(parseFloat(e.target.value))}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            title="Drag to seek"
+            title="Drag to seek anywhere in timeline"
           />
         </div>
 
-        {/* Timestamps */}
-        <div className="flex justify-between items-center text-xs font-medium text-slate-500 dark:text-slate-400 px-0.5">
-          <span>{formatTime(currentTime)}</span>
-          <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
-            Scene {currentSceneIndex + 1} of {scenes.length}: {scenes[currentSceneIndex]?.title}
-          </span>
-          <span>{formatTime(totalDuration)}</span>
+        {/* Timestamps & Active Scene Chip */}
+        <div className="flex justify-between items-center text-xs font-semibold px-0.5">
+          <span className="font-mono text-cyan-400 tabular-nums">{formatTime(currentTime)}</span>
+          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[11px]">
+            <Sparkles className="w-3 h-3 text-cyan-400" />
+            <span className="truncate max-w-[220px] sm:max-w-[340px]">
+              Scene {currentSceneIndex + 1}/{scenes.length}: {scenes[currentSceneIndex]?.title}
+            </span>
+          </div>
+          <span className="font-mono text-slate-400 tabular-nums">{formatTime(totalDuration)}</span>
         </div>
       </div>
 
-      {/* 2. Playback Control Buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        {/* Left: Quick scene jump / info */}
-        <div className="flex items-center gap-1.5">
+      {/* 2. Main Playback Controls Dock */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/5">
+        {/* Left Playback Buttons */}
+        <div className="flex items-center gap-2">
           <button
             onClick={onRestart}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
-            title="Restart Lesson"
+            className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-2xl transition"
+            title="Restart Lesson (0:00)"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => onSkip(-5)}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
             title="Rewind 5 seconds"
           >
             <Rewind className="w-4 h-4" />
+            <span className="hidden sm:inline font-mono">-5s</span>
           </button>
 
-          {/* Large Main Play/Pause Button */}
+          {/* Primary Glow Play/Pause Button */}
           <button
             onClick={onTogglePlay}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold flex items-center gap-2 shadow-md hover:shadow-indigo-500/25 transition active:scale-95"
+            className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.35)] transition transform active:scale-95 text-xs sm:text-sm tracking-wide"
           >
             {isPlaying ? (
               <>
@@ -139,46 +149,47 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
             ) : (
               <>
                 <Play className="w-4 h-4 fill-white" />
-                <span>{currentTime >= totalDuration ? 'Replay' : 'Play'}</span>
+                <span>{currentTime >= totalDuration ? 'Replay' : 'Play Lesson'}</span>
               </>
             )}
           </button>
 
           <button
             onClick={() => onSkip(5)}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
             title="Forward 5 seconds"
           >
+            <span className="hidden sm:inline font-mono">+5s</span>
             <FastForward className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Right: Audio Voice & Speed Controls */}
-        <div className="flex items-center gap-2">
-          {/* Mute/Voice Toggle */}
+        {/* Right Dock: Voice & Speed Selector */}
+        <div className="flex items-center gap-2.5">
+          {/* Voice Narration Pill */}
           <button
             onClick={onToggleMute}
-            className={`p-2 rounded-xl transition flex items-center gap-1.5 text-xs font-medium border ${
+            className={`px-3 py-1.5 rounded-2xl transition flex items-center gap-1.5 text-xs font-semibold border ${
               isMuted
-                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400'
-                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+                ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
             }`}
             title={isMuted ? 'Unmute Tutor Voice' : 'Mute Tutor Voice'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-emerald-500" />}
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Voice Narration'}</span>
           </button>
 
-          {/* Speed Selector */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+          {/* Rate Selector */}
+          <div className="flex items-center bg-slate-800/80 p-1 rounded-2xl border border-white/5 text-xs font-bold">
             {[0.75, 1, 1.25, 1.5].map((rate) => (
               <button
                 key={rate}
                 onClick={() => onChangeRate(rate)}
-                className={`px-2.5 py-1 rounded-lg transition ${
+                className={`px-2.5 py-1 rounded-xl transition ${
                   playbackRate === rate
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-sm'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {rate}x
@@ -188,30 +199,37 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
         </div>
       </div>
 
-      {/* 3. Scene Quick Navigation Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
+      {/* 3. Scene Chapter Navigation Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none border-t border-white/5">
         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-amber-500" />
+          <Layers className="w-3.5 h-3.5 text-cyan-400" />
           Scenes:
         </span>
         {scenes.map((scene, idx) => {
           const isActive = idx === currentSceneIndex;
+          const isFinished = sceneOffsets[idx] && currentTime >= sceneOffsets[idx].end;
           return (
             <button
               key={scene.id}
               onClick={() => onJumpScene(idx)}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition flex items-center gap-1.5 border ${
+              className={`shrink-0 px-3.5 py-1.5 rounded-2xl text-xs font-medium transition flex items-center gap-2 border ${
                 isActive
-                  ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300 shadow-[0_0_12px_rgba(56,189,248,0.2)]'
+                  : isFinished
+                  ? 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                  : 'bg-slate-800/30 border-slate-700/30 text-slate-400 hover:bg-slate-800/60'
               }`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isActive ? 'bg-indigo-600 dark:bg-indigo-400' : 'bg-slate-300 dark:bg-slate-600'
+                className={`w-2 h-2 rounded-full ${
+                  isActive
+                    ? 'bg-cyan-400 animate-pulse'
+                    : isFinished
+                    ? 'bg-emerald-400'
+                    : 'bg-slate-600'
                 }`}
               />
-              <span>
+              <span className="truncate max-w-[140px]">
                 {idx + 1}. {scene.title}
               </span>
             </button>

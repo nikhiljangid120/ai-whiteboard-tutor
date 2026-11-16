@@ -1,30 +1,34 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, MessageSquare, BookOpen, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Bot, User, MessageSquare, BookOpen, Sparkles, Loader2, ListOrdered, CheckCircle2 } from 'lucide-react';
 import { ChatMessage, LessonScene } from '@/types/lesson';
 
 interface ChatTutorProps {
   topic: string;
   lessonTitle: string;
   currentScene: LessonScene | null;
+  scenes?: LessonScene[];
   suggestedQuestions: string[];
   activeNarration?: string;
+  onJumpToScene?: (index: number) => void;
 }
 
 export const ChatTutor: React.FC<ChatTutorProps> = ({
   topic,
   lessonTitle,
   currentScene,
+  scenes = [],
   suggestedQuestions,
-  activeNarration
+  activeNarration,
+  onJumpToScene
 }) => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'transcript'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'transcript' | 'curriculum'>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       sender: 'tutor',
-      text: `Hello! I'm your AI Whiteboard Tutor. As you watch the visual lesson above, feel free to ask any question or click a suggested prompt below!`,
+      text: `Welcome! I'm your AI Whiteboard Tutor. As you watch the whiteboard lesson, feel free to ask questions about the diagrams, equations, or time complexity at any time!`,
       timestamp: 'Just now'
     }
   ]);
@@ -85,7 +89,7 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'tutor',
-        text: "I'm having a little trouble connecting right now, but feel free to review the whiteboard steps or try asking again in a moment!",
+        text: "I'm having a brief connection delay, but feel free to review the whiteboard steps or try asking again in a moment!",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -95,27 +99,30 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col h-[520px] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-      {/* Header Tabs */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+    <div className="w-full flex flex-col h-[540px] md:h-[620px] rounded-3xl bg-slate-900/85 dark:bg-slate-950/90 text-white backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden transition-all">
+      {/* 1. Header with Multi-Tab Switcher */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10 bg-slate-900/50">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/25">
             <Bot className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">AI Tutor Assistant</h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Ask questions anytime</p>
+            <h3 className="text-xs sm:text-sm font-bold tracking-wide text-white flex items-center gap-1.5">
+              <span>AI Tutor Studio</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </h3>
+            <p className="text-[10px] text-slate-400">Context-Aware Pedagogical Assistant</p>
           </div>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex items-center bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-medium">
+        {/* Tab switch pills */}
+        <div className="flex items-center bg-slate-800/80 p-1 rounded-2xl border border-white/5 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition ${
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition ${
               activeTab === 'chat'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-sm'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -123,45 +130,56 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('transcript')}
-            className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition ${
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition ${
               activeTab === 'transcript'
-                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-sm'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Live Narration</span>
+            <span>Voice Script</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('curriculum')}
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition ${
+              activeTab === 'curriculum'
+                ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <ListOrdered className="w-3.5 h-3.5" />
+            <span>Curriculum</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* 2. Tab Contents */}
       {activeTab === 'chat' ? (
         <div className="flex-1 flex flex-col justify-between overflow-hidden">
           {/* Messages list */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 scrollbar-thin scrollbar-thumb-slate-700">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'tutor' && (
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs shadow-sm">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white flex items-center justify-center shrink-0 text-xs shadow-md">
+                    <Bot className="w-3.5 h-3.5" />
                   </div>
                 )}
 
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/10'
-                      : 'bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-200/60 dark:border-slate-700/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-tr-none shadow-md shadow-cyan-600/15'
+                      : 'bg-slate-800/80 text-slate-100 rounded-tl-none border border-white/10'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                   <span
                     className={`block mt-1 text-[10px] ${
-                      msg.sender === 'user' ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'
+                      msg.sender === 'user' ? 'text-cyan-200' : 'text-slate-400'
                     }`}
                   >
                     {msg.timestamp}
@@ -169,8 +187,8 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
                 </div>
 
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 text-xs">
-                    <User className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-full bg-slate-700 text-slate-200 flex items-center justify-center shrink-0 text-xs">
+                    <User className="w-3.5 h-3.5" />
                   </div>
                 )}
               </div>
@@ -178,23 +196,23 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
 
             {isLoading && (
               <div className="flex gap-2.5 justify-start">
-                <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs animate-pulse">
-                  <Bot className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white flex items-center justify-center shrink-0 text-xs animate-pulse">
+                  <Bot className="w-3.5 h-3.5" />
                 </div>
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 text-xs text-slate-500">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                  <span>Tutor is formulating answer...</span>
+                <div className="bg-slate-800/80 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 text-xs text-slate-400 border border-white/5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  <span>Tutor is formulating pedagogical answer...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Suggested Prompts Carousel */}
+          {/* Suggested Prompts Horizontal Slider */}
           {suggestedQuestions && suggestedQuestions.length > 0 && (
-            <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                <Sparkles className="w-3 h-3 text-amber-500" />
+            <div className="px-3 py-2 bg-slate-900/60 border-t border-white/5">
+              <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-bold text-slate-400">
+                <Sparkles className="w-3 h-3 text-cyan-400" />
                 <span>Suggested Follow-ups:</span>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -202,7 +220,7 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
                   <button
                     key={idx}
                     onClick={() => handleSend(q)}
-                    className="shrink-0 text-left text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition shadow-2xs"
+                    className="shrink-0 text-left text-xs bg-slate-800/80 text-slate-200 hover:text-cyan-300 hover:bg-slate-800 px-3 py-1.5 rounded-xl border border-white/5 hover:border-cyan-500/40 transition shadow-sm"
                   >
                     {q}
                   </button>
@@ -211,8 +229,8 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
             </div>
           )}
 
-          {/* Input Box */}
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          {/* Interactive Chat Input */}
+          <div className="p-3 border-t border-white/10 bg-slate-900/80">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -224,13 +242,13 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
                 type="text"
                 value={inputQuestion}
                 onChange={(e) => setInputQuestion(e.target.value)}
-                placeholder="Ask about this whiteboard step..."
-                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm border border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition"
+                placeholder="Ask anything about this whiteboard lesson..."
+                className="flex-1 bg-slate-800/80 text-white placeholder:text-slate-400 px-4 py-2.5 rounded-2xl text-xs sm:text-sm border border-white/10 focus:border-cyan-400 outline-none transition"
               />
               <button
                 type="submit"
                 disabled={!inputQuestion.trim() || isLoading}
-                className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl transition shadow-sm"
+                className="p-2.5 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-90 disabled:opacity-40 text-white rounded-2xl transition shadow-md shadow-cyan-500/20"
                 title="Send Question"
               >
                 <Send className="w-4 h-4" />
@@ -238,32 +256,65 @@ export const ChatTutor: React.FC<ChatTutorProps> = ({
             </form>
           </div>
         </div>
-      ) : (
-        /* Live Narration Transcript Tab */
+      ) : activeTab === 'transcript' ? (
+        /* Live Voice Narration Transcript Tab */
         <div className="flex-1 p-5 overflow-y-auto space-y-4">
-          <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900">
-            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Current Scene Spoken Script:</span>
+          <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30">
+            <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 mb-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>Current Spoken Audio Transcript:</span>
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-200 italic leading-relaxed">
+            <p className="text-sm text-slate-200 italic leading-relaxed">
               &ldquo;{activeNarration || currentScene?.narration || 'No active narration.'}&rdquo;
             </p>
           </div>
 
           {currentScene?.keyConcept && (
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Key Concept</h4>
-              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentScene.keyConcept}</p>
+            <div className="p-4 rounded-2xl bg-slate-800/70 border border-white/5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Key Pedagogical Concept
+              </h4>
+              <p className="text-sm text-slate-200 font-medium leading-relaxed">{currentScene.keyConcept}</p>
             </div>
           )}
 
-          <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">Why Read Along?</p>
-            <p>
-              As the tutor speaks, the whiteboard coordinates each drawing in real-time. You can pause anytime to take notes or scrub backwards to hear any section again!
-            </p>
+          <div className="p-3.5 rounded-2xl bg-slate-800/40 border border-white/5 text-xs text-slate-400 leading-relaxed">
+            <span className="font-bold text-slate-300 block mb-1">Timeline & Voice Synchronization:</span>
+            As the tutor speaks, every diagram, pointer, equation, and badge renders at that exact timestamp. Scrubbing the progress bar below recalculates both audio and whiteboard visuals instantly.
           </div>
+        </div>
+      ) : (
+        /* Full Curriculum Scene List Tab */
+        <div className="flex-1 p-4 overflow-y-auto space-y-2.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 px-1">
+            Lesson Scenes ({scenes.length} steps):
+          </div>
+          {scenes.map((scene, idx) => {
+            const isCurrent = scene.id === currentScene?.id;
+            return (
+              <button
+                key={scene.id}
+                onClick={() => onJumpToScene && onJumpToScene(idx)}
+                className={`w-full text-left p-3 rounded-2xl border transition flex items-start gap-3 ${
+                  isCurrent
+                    ? 'bg-cyan-500/15 border-cyan-400/40 text-cyan-200 shadow-md'
+                    : 'bg-slate-800/50 border-white/5 text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                <span className="w-6 h-6 rounded-xl bg-slate-700/80 flex items-center justify-center shrink-0 text-xs font-mono font-bold text-cyan-400">
+                  {idx + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold truncate">{scene.title}</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{scene.keyConcept || scene.narration}</p>
+                </div>
+                <span className="text-[10px] font-mono font-semibold text-slate-500 shrink-0">
+                  ~{scene.duration}s
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

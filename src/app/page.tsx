@@ -13,17 +13,15 @@ import {
   GraduationCap,
   Sparkles,
   GitBranch,
-  Sun,
-  Moon,
   ExternalLink,
-  Award
+  Award,
+  Clock
 } from 'lucide-react';
 
 export default function Home() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(SAMPLE_LESSONS['binary-search']);
   const [isLoadingLesson, setIsLoadingLesson] = useState(false);
-  const [isDarkBoard, setIsDarkBoard] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkBoard, setIsDarkBoard] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Core lesson player hook
@@ -51,8 +49,8 @@ export default function Home() {
   useEffect(() => {
     if (totalDuration > 0 && currentTime >= totalDuration - 0.5) {
       confetti({
-        particleCount: 60,
-        spread: 70,
+        particleCount: 75,
+        spread: 80,
         origin: { y: 0.6 }
       });
     }
@@ -63,6 +61,38 @@ export default function Home() {
     setIsLoadingLesson(true);
     setStatusMessage(null);
     pause();
+
+    const lower = topic.toLowerCase();
+    if (lower.includes('binary search')) {
+      setCurrentLesson(SAMPLE_LESSONS['binary-search']);
+      setStatusMessage('Loaded flagship lesson: Binary Search Algorithm');
+      setIsLoadingLesson(false);
+      return;
+    }
+    if (lower.includes('neural')) {
+      setCurrentLesson(SAMPLE_LESSONS['neural-networks']);
+      setStatusMessage('Loaded flagship lesson: Neural Networks & Backprop');
+      setIsLoadingLesson(false);
+      return;
+    }
+    if (lower.includes('tcp') || lower.includes('handshake')) {
+      setCurrentLesson(SAMPLE_LESSONS['tcp-handshake']);
+      setStatusMessage('Loaded flagship lesson: TCP Three-Way Handshake');
+      setIsLoadingLesson(false);
+      return;
+    }
+    if (lower.includes('photosynthesis')) {
+      setCurrentLesson(SAMPLE_LESSONS['photosynthesis']);
+      setStatusMessage('Loaded flagship lesson: Photosynthesis in Plants');
+      setIsLoadingLesson(false);
+      return;
+    }
+    if (lower.includes('pythagor')) {
+      setCurrentLesson(SAMPLE_LESSONS['pythagorean-theorem']);
+      setStatusMessage('Loaded flagship lesson: Pythagorean Theorem');
+      setIsLoadingLesson(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/generate-lesson', {
@@ -81,76 +111,70 @@ export default function Home() {
         if (data.warning) {
           setStatusMessage(data.warning);
         } else {
-          setStatusMessage(`Generated live with Gemini AI: "${data.lesson.title}"`);
+          setStatusMessage(`Live AI Generation with ${data.modelUsed || 'Gemini'}: "${data.lesson.title}"`);
         }
       }
     } catch (err: unknown) {
       console.error('Failed to generate lesson:', err);
-      // Fallback to sample lesson
       const fallback = SAMPLE_LESSONS['binary-search'];
       setCurrentLesson(fallback);
-      setStatusMessage('Connected to offline curriculum backup.');
+      setStatusMessage('Connected to offline backup curriculum.');
     } finally {
       setIsLoadingLesson(false);
     }
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      {/* 1. Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Ambient Radial Neon Glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[450px] bg-gradient-to-b from-indigo-500/10 via-cyan-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
+
+      {/* 1. Futuristic Glassmorphic Navigation Bar */}
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#050811]/85 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Project Title */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                <span className="font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyan-300 bg-clip-text text-transparent">
                   Braynix Whiteboard Tutor
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                  <Sparkles className="w-2.5 h-2.5 text-indigo-500" />
-                  AI Sync
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                  <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+                  Gemini Synced
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Technical Assignment Demo</p>
+              <p className="text-[10px] text-slate-400">Technical Assignment Demo • Nikhil Jangid</p>
             </div>
           </div>
 
           {/* Right Header Navigation */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
-              title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
-            >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
+          <div className="flex items-center gap-3">
             <a
-              href="https://github.com/Braynix-Studios/ai-whiteboard-tutor-assignment"
+              href="https://github.com/nikhiljangid120/ai-whiteboard-tutor"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-200 transition shadow-sm"
             >
-              <GitBranch className="w-4 h-4 text-indigo-500" />
-              <span>Assignment Spec</span>
+              <GitBranch className="w-4 h-4 text-cyan-400" />
+              <span>GitHub Repo</span>
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
           </div>
         </div>
       </header>
 
-      {/* Status or notification toast banner */}
+      {/* Status banner */}
       {statusMessage && (
-        <div className="bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-100 dark:border-indigo-900 py-2 px-4 text-center text-xs font-medium text-indigo-800 dark:text-indigo-300 flex items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="bg-gradient-to-r from-cyan-950/60 via-indigo-950/60 to-slate-950/60 border-b border-cyan-500/30 py-2.5 px-4 text-center text-xs font-semibold text-cyan-300 flex items-center justify-center gap-2 shadow-inner">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span>{statusMessage}</span>
           <button
             onClick={() => setStatusMessage(null)}
-            className="ml-3 text-indigo-500 hover:text-indigo-800 underline text-[11px]"
+            className="ml-3 text-cyan-400 hover:text-white underline text-[11px]"
           >
             Dismiss
           </button>
@@ -158,7 +182,7 @@ export default function Home() {
       )}
 
       {/* Main Content Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8 flex-1">
         {/* Topic Input Search bar / Hero section */}
         <TopicSelector
           onSelectTopic={handleSelectTopic}
@@ -166,33 +190,34 @@ export default function Home() {
           currentTopic={currentLesson?.topic}
         />
 
-        {/* Active Lesson Section */}
+        {/* Active Lesson Stage */}
         {currentLesson && (
           <section className="flex flex-col gap-4">
             {/* Lesson Title Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-5 rounded-3xl bg-slate-900/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
               <div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-0.5">
-                  <span className="uppercase tracking-wider">Lesson Topic:</span>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
+                <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 mb-1">
+                  <span className="uppercase tracking-wider">Lesson Subject:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-semibold">
                     {currentLesson.topic}
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-black text-white">
                   {currentLesson.title}
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
                   {currentLesson.overview}
                 </p>
               </div>
 
               <div className="shrink-0 flex items-center gap-2">
-                <span className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
-                  ⏱ ~{Math.round(totalDuration)}s Interactive
+                <span className="px-3 py-1.5 rounded-2xl bg-slate-800/80 border border-white/10 text-slate-300 text-xs font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  ~{Math.round(totalDuration)}s Lesson
                 </span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1">
+                <span className="px-3 py-1.5 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5" />
-                  Step-by-step
+                  {currentLesson.scenes.length} Scenes
                 </span>
               </div>
             </div>
@@ -205,6 +230,7 @@ export default function Home() {
                 <WhiteboardCanvas
                   currentScene={currentScene}
                   sceneElapsedTime={sceneElapsedTime}
+                  isPlaying={isPlaying}
                   isDarkBoard={isDarkBoard}
                   onToggleDarkBoard={() => setIsDarkBoard(!isDarkBoard)}
                 />
@@ -229,14 +255,16 @@ export default function Home() {
                 />
               </div>
 
-              {/* Right Column (AI Tutor Chat & Narration Transcript) */}
+              {/* Right Column (AI Tutor Multi-Tab Studio Assistant) */}
               <div className="lg:col-span-4 flex flex-col">
                 <ChatTutor
                   topic={currentLesson.topic}
                   lessonTitle={currentLesson.title}
                   currentScene={currentScene}
+                  scenes={currentLesson.scenes}
                   suggestedQuestions={currentLesson.suggestedQuestions}
                   activeNarration={currentScene?.narration}
+                  onJumpToScene={jumpScene}
                 />
               </div>
             </div>
@@ -245,17 +273,23 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+      <footer className="mt-16 border-t border-white/10 bg-[#050811]/90 py-8 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-indigo-600" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
+            <GraduationCap className="w-4 h-4 text-cyan-400" />
+            <span className="font-semibold text-white">
               Braynix Studios Technical Assignment
             </span>
-            <span>• Submitted by Nikhil Jangid</span>
+            <span>• Submitted by Nikhil Jangid (<a href="mailto:nikhiljangid343@gmail.com" className="hover:text-cyan-400 underline">nikhiljangid343@gmail.com</a>)</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span>Next.js 14 • TypeScript • Tailwind CSS • Google Gemini AI</span>
+          <div className="flex items-center gap-3 font-mono text-[11px] text-slate-500">
+            <span>Next.js 14</span>
+            <span>•</span>
+            <span>TypeScript</span>
+            <span>•</span>
+            <span>HTML5 Canvas</span>
+            <span>•</span>
+            <span>Google Gemini 3.6</span>
           </div>
         </div>
       </footer>

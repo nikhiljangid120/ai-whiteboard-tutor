@@ -2,11 +2,30 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { WhiteboardAction, LessonScene } from '@/types/lesson';
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Download, Sun, Moon } from 'lucide-react';
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Maximize2,
+  Download,
+  PenTool,
+  Highlighter,
+  Eraser,
+  Sparkles
+} from 'lucide-react';
+
+interface AnnotationPoint {
+  x: number;
+  y: number;
+  color: string;
+  width: number;
+  isHighlighter?: boolean;
+}
 
 interface WhiteboardCanvasProps {
   currentScene: LessonScene | null;
-  sceneElapsedTime: number; // seconds into current scene
+  sceneElapsedTime: number;
+  isPlaying: boolean;
   isDarkBoard?: boolean;
   onToggleDarkBoard?: () => void;
 }
@@ -14,32 +33,45 @@ interface WhiteboardCanvasProps {
 export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   currentScene,
   sceneElapsedTime,
-  isDarkBoard = false,
+  isPlaying,
+  isDarkBoard = true,
   onToggleDarkBoard
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Pan & Zoom
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Virtual canvas dimensions (16:9 ratio)
+  // Interactive Learner Drawing Mode
+  const [activeTool, setActiveTool] = useState<'cursor' | 'pen' | 'highlighter' | 'laser'>('cursor');
+  const [penColor, setPenColor] = useState<string>('#38bdf8'); // Cyan default
+  const [userStrokes, setUserStrokes] = useState<AnnotationPoint[][]>([]);
+  const [currentStroke, setCurrentStroke] = useState<AnnotationPoint[]>([]);
+  const [laserPos, setLaserPos] = useState<{ x: number; y: number } | null>(null);
+
   const VIRTUAL_WIDTH = 800;
   const VIRTUAL_HEIGHT = 450;
 
-  // Handle Canvas Drawing
+  // Soundwave animation frame counter
+  const animTickRef = useRef<number>(0);
+
+  // Canvas Drawing Routine
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Handle high DPI
+    animTickRef.current += 1;
+    const tick = animTickRef.current;
+
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    
+
     if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
@@ -51,28 +83,43 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     const width = rect.width;
     const height = rect.height;
 
-    // Background styling
-    const bgColor = isDarkBoard ? '#0f172a' : '#ffffff';
-    const gridDotColor = isDarkBoard ? '#334155' : '#e2e8f0';
-
+    // Background Styling (Studio Obsidian Dark vs Crisp Modern White)
+    const bgColor = isDarkBoard ? '#090d16' : '#ffffff';
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle grid dots pattern
-    const dotSpacing = 24 * zoom;
+    // Subtle Radial Ambient Glow in Dark Mode
+    if (isDarkBoard) {
+      const gradient = ctx.createRadialGradient(
+        width / 2,
+        height * 0.25,
+        20,
+        width / 2,
+        height * 0.25,
+        width * 0.65
+      );
+      gradient.addColorStop(0, 'rgba(56, 189, 248, 0.07)');
+      gradient.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)');
+      gradient.addColorStop(1, 'rgba(9, 13, 22, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Modern Studio Grid (Subtle Crosshair / Dots)
+    const dotSpacing = 28 * zoom;
     const offsetX = (pan.x * zoom) % dotSpacing;
     const offsetY = (pan.y * zoom) % dotSpacing;
 
-    ctx.fillStyle = gridDotColor;
+    ctx.fillStyle = isDarkBoard ? 'rgba(148, 163, 184, 0.08)' : 'rgba(148, 163, 184, 0.2)';
     for (let x = offsetX; x < width; x += dotSpacing) {
       for (let y = offsetY; y < height; y += dotSpacing) {
         ctx.beginPath();
-        ctx.arc(x, y, 1.2 * Math.min(zoom, 1.5), 0, Math.PI * 2);
+        ctx.arc(x, y, 1.2 * Math.min(zoom, 1.4), 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    // Coordinate mapping from virtual 800x450 to actual canvas size with pan & zoom
+    // Coordinate mapping from virtual 800x450
     const baseScale = Math.min(width / VIRTUAL_WIDTH, height / VIRTUAL_HEIGHT);
     const finalScale = baseScale * zoom;
     const originX = (width - VIRTUAL_WIDTH * finalScale) / 2 + pan.x;
@@ -82,56 +129,171 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     ctx.translate(originX, originY);
     ctx.scale(finalScale, finalScale);
 
+    // Render Scene Actions
     if (currentScene && currentScene.actions) {
-      // Render all actions whose timeOffset <= sceneElapsedTime
       currentScene.actions.forEach((action) => {
         if (action.timeOffset > sceneElapsedTime) return;
 
-        // Progressive reveal opacity animation (0 to 1 over 0.3s)
         const age = sceneElapsedTime - action.timeOffset;
         const progress = Math.min(age / 0.35, 1);
 
         ctx.save();
         ctx.globalAlpha = progress;
-
-        renderAction(ctx, action, isDarkBoard, progress);
+        renderAction(ctx, action, isDarkBoard, progress, tick);
         ctx.restore();
       });
     } else {
-      // Empty state placeholder
       ctx.fillStyle = isDarkBoard ? '#64748b' : '#94a3b8';
       ctx.font = '500 18px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Select a topic to start the interactive whiteboard lesson', VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
+      ctx.fillText('Select any topic above to launch your AI Whiteboard session', VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
+    }
+
+    // Render User Annotations (Pen & Highlighter)
+    const allStrokes = currentStroke.length > 0 ? [...userStrokes, currentStroke] : userStrokes;
+    allStrokes.forEach((stroke) => {
+      if (stroke.length < 2) return;
+      ctx.save();
+      const first = stroke[0];
+      ctx.strokeStyle = first.color;
+      ctx.lineWidth = first.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      if (first.isHighlighter) {
+        ctx.globalAlpha = 0.35;
+      }
+      ctx.beginPath();
+      ctx.moveTo(stroke[0].x, stroke[0].y);
+      for (let i = 1; i < stroke.length; i++) {
+        ctx.lineTo(stroke[i].x, stroke[i].y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // Render Laser Pointer
+    if (laserPos && activeTool === 'laser') {
+      ctx.save();
+      const pulse = 1 + Math.sin(tick * 0.15) * 0.3;
+      ctx.beginPath();
+      ctx.arc(laserPos.x, laserPos.y, 14 * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(laserPos.x, laserPos.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore(); // restore scaled context
+
+    // Floating Live Audio Waveform (Tutor Presence Indicator)
+    if (isPlaying) {
+      renderAudioVisualizer(ctx, width, height, isDarkBoard, tick);
     }
 
     ctx.restore();
-    ctx.restore();
-  }, [currentScene, sceneElapsedTime, zoom, pan, isDarkBoard]);
+  }, [currentScene, sceneElapsedTime, zoom, pan, isDarkBoard, userStrokes, currentStroke, laserPos, activeTool, isPlaying]);
 
   useEffect(() => {
     let animId: number;
-    const renderLoop = () => {
+    const loop = () => {
       draw();
-      animId = requestAnimationFrame(renderLoop);
+      animId = requestAnimationFrame(loop);
     };
-    animId = requestAnimationFrame(renderLoop);
+    animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
   }, [draw]);
 
-  // Export board as PNG
+  // Convert screen coordinates to virtual 800x450 coordinates
+  const getVirtualCoords = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const baseScale = Math.min(width / VIRTUAL_WIDTH, height / VIRTUAL_HEIGHT);
+    const finalScale = baseScale * zoom;
+    const originX = (width - VIRTUAL_WIDTH * finalScale) / 2 + pan.x;
+    const originY = (height - VIRTUAL_HEIGHT * finalScale) / 2 + pan.y;
+
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+
+    return {
+      x: (screenX - originX) / finalScale,
+      y: (screenY - originY) / finalScale
+    };
+  };
+
+  // Mouse Interaction Handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (activeTool === 'cursor' || e.button === 1 || e.shiftKey) {
+      setIsPanning(true);
+      setStartPan({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    } else if (activeTool === 'pen' || activeTool === 'highlighter') {
+      const v = getVirtualCoords(e.clientX, e.clientY);
+      setCurrentStroke([
+        {
+          x: v.x,
+          y: v.y,
+          color: penColor,
+          width: activeTool === 'highlighter' ? 14 : 3.5,
+          isHighlighter: activeTool === 'highlighter'
+        }
+      ]);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      setPan({ x: e.clientX - startPan.x, y: e.clientY - startPan.y });
+    } else if (activeTool === 'laser') {
+      setLaserPos(getVirtualCoords(e.clientX, e.clientY));
+    } else if ((activeTool === 'pen' || activeTool === 'highlighter') && currentStroke.length > 0) {
+      const v = getVirtualCoords(e.clientX, e.clientY);
+      setCurrentStroke((prev) => [
+        ...prev,
+        {
+          x: v.x,
+          y: v.y,
+          color: penColor,
+          width: activeTool === 'highlighter' ? 14 : 3.5,
+          isHighlighter: activeTool === 'highlighter'
+        }
+      ]);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+    }
+    if (currentStroke.length > 0) {
+      setUserStrokes((prev) => [...prev, currentStroke]);
+      setCurrentStroke([]);
+    }
+  };
+
+  const handleClearAnnotations = () => {
+    setUserStrokes([]);
+    setCurrentStroke([]);
+  };
+
   const handleExportPNG = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const image = canvas.toDataURL('image/png');
     const link = document.createElement('a');
-    link.download = `whiteboard-${currentScene?.title?.replace(/\s+/g, '-').toLowerCase() || 'lesson'}.png`;
-    link.href = image;
+    link.download = `braynix-whiteboard-${currentScene?.title?.replace(/\s+/g, '-').toLowerCase() || 'lesson'}.png`;
+    link.href = canvas.toDataURL('image/png');
     link.click();
   };
 
-  // Toggle fullscreen
   const handleToggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -141,51 +303,109 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     }
   };
 
-  // Mouse pan controls
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 0) {
-      setIsPanning(true);
-      setStartPan({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isPanning) {
-      setPan({ x: e.clientX - startPan.x, y: e.clientY - startPan.y });
-    }
-  };
-
-  const handleMouseUp = () => setIsPanning(false);
-
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[380px] md:min-h-[480px] flex flex-col rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900 select-none"
+      className={`relative w-full h-full min-h-[420px] md:min-h-[520px] flex flex-col rounded-3xl overflow-hidden border transition-all duration-300 shadow-2xl ${
+        isDarkBoard
+          ? 'bg-[#090d16] border-slate-800 shadow-cyan-950/20'
+          : 'bg-white border-slate-200 shadow-slate-200/50'
+      } select-none`}
     >
-      {/* Top Floating Whiteboard Header */}
-      <div className="absolute top-3 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700/80 shadow-sm text-xs font-semibold text-slate-700 dark:text-slate-200">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Interactive Canvas</span>
+      {/* Top Floating Glass Command Bar */}
+      <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        {/* Left: Live Session Indicator */}
+        <div className="pointer-events-auto flex items-center gap-2.5 bg-slate-900/85 dark:bg-slate-900/90 text-white backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-lg text-xs font-semibold">
+          <div className="relative flex items-center justify-center">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute" />
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 relative" />
+          </div>
+          <span className="tracking-wide">AI Whiteboard</span>
           {currentScene && (
-            <span className="text-slate-400 dark:text-slate-500 font-normal">
-              • Scene {currentScene.id}: {currentScene.title}
+            <span className="text-slate-400 font-normal border-l border-slate-700 pl-2">
+              Scene {currentScene.id} • {currentScene.title}
             </span>
           )}
         </div>
 
-        {/* Toolbar controls */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-1.5 rounded-full border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+        {/* Center: Learner Interactive Drawing Tools */}
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/85 text-white backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
+          <button
+            onClick={() => setActiveTool('cursor')}
+            className={`p-2 rounded-xl transition ${
+              activeTool === 'cursor' ? 'bg-cyan-500 text-slate-950 font-bold shadow-md' : 'text-slate-300 hover:bg-white/10'
+            }`}
+            title="Pan / Select"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setActiveTool('pen')}
+            className={`p-2 rounded-xl transition ${
+              activeTool === 'pen' ? 'bg-cyan-500 text-slate-950 font-bold shadow-md' : 'text-slate-300 hover:bg-white/10'
+            }`}
+            title="Learner Pen (Draw on board)"
+          >
+            <PenTool className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setActiveTool('highlighter')}
+            className={`p-2 rounded-xl transition ${
+              activeTool === 'highlighter' ? 'bg-cyan-500 text-slate-950 font-bold shadow-md' : 'text-slate-300 hover:bg-white/10'
+            }`}
+            title="Neon Highlighter"
+          >
+            <Highlighter className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setActiveTool('laser')}
+            className={`p-2 rounded-xl transition ${
+              activeTool === 'laser' ? 'bg-rose-500 text-white font-bold shadow-md' : 'text-slate-300 hover:bg-white/10'
+            }`}
+            title="Laser Pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+
+          {/* Color choices when pen is selected */}
+          {(activeTool === 'pen' || activeTool === 'highlighter') && (
+            <div className="flex items-center gap-1.5 border-l border-white/15 pl-1.5">
+              {['#38bdf8', '#34d399', '#f59e0b', '#ec4899', '#f8fafc'].map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setPenColor(color)}
+                  style={{ backgroundColor: color }}
+                  className={`w-3.5 h-3.5 rounded-full transition transform hover:scale-125 ${
+                    penColor === color ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-900 scale-110' : ''
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+
+          {userStrokes.length > 0 && (
+            <button
+              onClick={handleClearAnnotations}
+              className="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl transition"
+              title="Clear User Drawings"
+            >
+              <Eraser className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Right: Canvas Viewport Controls */}
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/85 text-white backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg">
           <button
             onClick={() => setZoom((z) => Math.min(z + 0.2, 2.5))}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
+            className="p-2 text-slate-300 hover:bg-white/10 rounded-xl transition"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(z - 0.2, 0.6))}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
+            className="p-2 text-slate-300 hover:bg-white/10 rounded-xl transition"
             title="Zoom Out"
           >
             <ZoomOut className="w-4 h-4" />
@@ -195,35 +415,35 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
               setZoom(1);
               setPan({ x: 0, y: 0 });
             }}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
-            title="Reset Zoom & Pan"
+            className="p-2 text-slate-300 hover:bg-white/10 rounded-xl transition"
+            title="Reset Pan & Zoom"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
 
-          <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+          <div className="w-[1px] h-4 bg-white/20 mx-0.5" />
 
           {onToggleDarkBoard && (
             <button
               onClick={onToggleDarkBoard}
-              className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
-              title={isDarkBoard ? 'Switch to Whiteboard' : 'Switch to Slate Board'}
+              className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/20 transition"
+              title="Toggle Chalkboard / Whiteboard"
             >
-              {isDarkBoard ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDarkBoard ? 'Slate' : 'White'}
             </button>
           )}
 
           <button
             onClick={handleExportPNG}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
-            title="Download Canvas PNG"
+            className="p-2 text-slate-300 hover:bg-white/10 rounded-xl transition"
+            title="Export Board as PNG"
           >
             <Download className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleToggleFullscreen}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
+            className="p-2 text-slate-300 hover:bg-white/10 rounded-xl transition"
             title="Toggle Fullscreen"
           >
             <Maximize2 className="w-4 h-4" />
@@ -231,29 +451,88 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         </div>
       </div>
 
-      {/* HTML5 Canvas Element */}
+      {/* HTML5 Canvas */}
       <canvas
         ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`w-full h-full flex-1 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`w-full h-full flex-1 ${
+          activeTool === 'pen' || activeTool === 'highlighter'
+            ? 'cursor-crosshair'
+            : activeTool === 'laser'
+            ? 'cursor-none'
+            : isPanning
+            ? 'cursor-grabbing'
+            : 'cursor-grab'
+        }`}
       />
     </div>
   );
 };
 
 /**
- * High-quality canvas rendering helper for individual whiteboard actions
+ * Animated Real-Time Voice Waveform Indicator
+ */
+function renderAudioVisualizer(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  isDark: boolean,
+  tick: number
+) {
+  ctx.save();
+  const boxW = 160;
+  const boxH = 34;
+  const boxX = 24;
+  const boxY = height - boxH - 20;
+
+  // Frosted pill container
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 17);
+  ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.9)';
+  ctx.fill();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(99, 102, 241, 0.3)';
+  ctx.stroke();
+
+  // Pulse icon
+  ctx.fillStyle = isDark ? '#38bdf8' : '#6366f1';
+  ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Tutor Voice', boxX + 14, boxY + boxH / 2);
+
+  // Equalizer Bars
+  const barsX = boxX + 90;
+  const barsCount = 7;
+  for (let i = 0; i < barsCount; i++) {
+    const wave = Math.sin(tick * 0.18 + i * 0.7) * 0.5 + 0.5;
+    const barH = 5 + wave * 14;
+    const barX = barsX + i * 8;
+    const barY = boxY + (boxH - barH) / 2;
+
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, 4, barH, 2);
+    ctx.fillStyle = isDark ? '#38bdf8' : '#6366f1';
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * High-End Vector Canvas Renderer for Whiteboard Actions
  */
 function renderAction(
   ctx: CanvasRenderingContext2D,
   action: WhiteboardAction,
   isDark: boolean,
-  progress: number
+  progress: number,
+  tick: number
 ) {
-  const defaultStroke = isDark ? '#f8fafc' : '#1e293b';
+  const defaultStroke = isDark ? '#f8fafc' : '#0f172a';
   const defaultText = isDark ? '#f1f5f9' : '#0f172a';
 
   switch (action.type) {
@@ -262,18 +541,18 @@ function renderAction(
       const y = action.y || 45;
       const fontSize = action.fontSize || 24;
 
-      ctx.font = `700 ${fontSize}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = action.color || (isDark ? '#60a5fa' : '#2563eb');
+      ctx.font = `800 ${fontSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = action.color || (isDark ? '#38bdf8' : '#2563eb');
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 60, y);
 
-      // Subtle underline accent
+      // Glowing Neon underline accent
       ctx.beginPath();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = (action.color || (isDark ? '#60a5fa' : '#2563eb')) + '44';
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = action.color || (isDark ? '#38bdf8' : '#2563eb');
       ctx.moveTo(60, y + fontSize * 0.7);
-      ctx.lineTo(60 + Math.min(ctx.measureText(text).width * progress, 350), y + fontSize * 0.7);
+      ctx.lineTo(60 + Math.min(ctx.measureText(text).width * progress, 400), y + fontSize * 0.7);
       ctx.stroke();
       break;
     }
@@ -297,7 +576,7 @@ function renderAction(
       const y = action.y || 100;
       const w = action.width || 180;
       const h = action.height || 100;
-      const radius = 12;
+      const radius = 14;
 
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, radius);
@@ -310,20 +589,19 @@ function renderAction(
       ctx.lineWidth = action.strokeWidth || 2;
       ctx.strokeStyle = action.stroke || defaultStroke;
       if (action.dashed) {
-        ctx.setLineDash([6, 4]);
+        ctx.setLineDash([6, 5]);
       } else {
         ctx.setLineDash([]);
       }
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Label at top or center
       if (action.label) {
-        ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+        ctx.font = '700 14px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = action.stroke || defaultStroke;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(action.label, x + w / 2, y + 20);
+        ctx.fillText(action.label, x + w / 2, y + 22);
       }
       break;
     }
@@ -346,11 +624,11 @@ function renderAction(
       ctx.stroke();
 
       if (action.label) {
-        ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+        ctx.font = '700 14px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = action.stroke || defaultStroke;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(action.label, x, y - 8);
+        ctx.fillText(action.label, x, y);
       }
       break;
     }
@@ -362,12 +640,11 @@ function renderAction(
       const ty = action.toY || 100;
       const color = action.color || (isDark ? '#38bdf8' : '#0284c7');
 
-      // Animate line length with progress
       const curTx = fx + (tx - fx) * progress;
       const curTy = fy + (ty - fy) * progress;
 
       const angle = Math.atan2(curTy - fy, curTx - fx);
-      const headlen = 10;
+      const headlen = 11;
 
       ctx.beginPath();
       ctx.lineWidth = 3;
@@ -376,7 +653,6 @@ function renderAction(
       ctx.lineTo(curTx, curTy);
       ctx.stroke();
 
-      // Arrow head
       if (progress > 0.8) {
         ctx.beginPath();
         ctx.fillStyle = color;
@@ -393,19 +669,18 @@ function renderAction(
         ctx.fill();
       }
 
-      // Middle label badge
       if (action.label && progress > 0.5) {
         const midX = (fx + tx) / 2;
-        const midY = (fy + ty) / 2 - 12;
+        const midY = (fy + ty) / 2 - 14;
 
         ctx.font = '600 12px system-ui, -apple-system, sans-serif';
-        const labelWidth = ctx.measureText(action.label).width + 12;
+        const labelWidth = ctx.measureText(action.label).width + 16;
 
-        ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
         ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.roundRect(midX - labelWidth / 2, midY - 10, labelWidth, 20, 6);
+        ctx.roundRect(midX - labelWidth / 2, midY - 11, labelWidth, 22, 8);
         ctx.fill();
         ctx.stroke();
 
@@ -414,23 +689,6 @@ function renderAction(
         ctx.textBaseline = 'middle';
         ctx.fillText(action.label, midX, midY);
       }
-      break;
-    }
-
-    case 'line': {
-      const fx = action.fromX || 80;
-      const fy = action.fromY || 100;
-      const tx = action.toX || 300;
-      const ty = action.toY || 100;
-
-      ctx.beginPath();
-      ctx.lineWidth = action.strokeWidth || 3;
-      ctx.strokeStyle = action.stroke || defaultStroke;
-      if (action.dashed) ctx.setLineDash([5, 5]);
-      ctx.moveTo(fx, fy);
-      ctx.lineTo(fx + (tx - fx) * progress, fy + (ty - fy) * progress);
-      ctx.stroke();
-      ctx.setLineDash([]);
       break;
     }
 
@@ -443,60 +701,61 @@ function renderAction(
       const cellSize = 54;
 
       values.forEach((val, idx) => {
-        const cellX = x + idx * (cellSize + 4);
+        const cellX = x + idx * (cellSize + 5);
         const cellY = y;
         const isActive = activeIndices.length === 0 || activeIndices.includes(idx);
 
-        // Cell box
+        // Glassmorphism card cell
         ctx.beginPath();
-        ctx.roundRect(cellX, cellY, cellSize, cellSize, 8);
+        ctx.roundRect(cellX, cellY, cellSize, cellSize, 10);
         ctx.fillStyle = isActive
-          ? isDark ? '#1e293b' : '#ffffff'
-          : isDark ? '#090d16' : '#f1f5f9';
+          ? isDark ? 'rgba(30, 41, 59, 0.9)' : '#ffffff'
+          : isDark ? 'rgba(15, 23, 42, 0.4)' : '#f1f5f9';
         ctx.fill();
 
-        ctx.lineWidth = isActive ? 2 : 1;
+        ctx.lineWidth = isActive ? 2.5 : 1;
         ctx.strokeStyle = isActive
-          ? isDark ? '#60a5fa' : '#3b82f6'
+          ? isDark ? '#38bdf8' : '#2563eb'
           : isDark ? '#334155' : '#cbd5e1';
         ctx.stroke();
 
-        // Index label above cell
-        ctx.font = '500 11px monospace';
+        // Index label
+        ctx.font = '600 11px monospace';
         ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(`[${idx}]`, cellX + cellSize / 2, cellY - 4);
+        ctx.fillText(`[${idx}]`, cellX + cellSize / 2, cellY - 5);
 
-        // Value inside cell
-        ctx.font = '700 18px monospace';
-        ctx.fillStyle = isActive ? (isDark ? '#f8fafc' : '#0f172a') : '#94a3b8';
+        // Cell value
+        ctx.font = '700 19px monospace';
+        ctx.fillStyle = isActive ? (isDark ? '#f8fafc' : '#0f172a') : '#64748b';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(String(val), cellX + cellSize / 2, cellY + cellSize / 2);
       });
 
-      // Pointers (e.g. Left, Mid, Right)
+      // Pointer Labels & Arrow Badges with gentle hover float
       pointers.forEach((ptr) => {
-        const ptrX = x + ptr.index * (cellSize + 4) + cellSize / 2;
+        const ptrX = x + ptr.index * (cellSize + 5) + cellSize / 2;
         const isTop = ptr.position === 'top';
-        const ptrY = isTop ? y - 28 : y + cellSize + 16;
-        const ptrColor = ptr.color || '#3b82f6';
+        const floatOffset = Math.sin(tick * 0.1) * 3;
+        const ptrY = isTop ? y - 30 + floatOffset : y + cellSize + 16 + floatOffset;
+        const ptrColor = ptr.color || '#38bdf8';
 
-        ctx.font = '700 12px system-ui, -apple-system, sans-serif';
-        const txtWidth = ctx.measureText(ptr.label).width + 12;
+        ctx.font = '800 12px system-ui, -apple-system, sans-serif';
+        const txtWidth = ctx.measureText(ptr.label).width + 16;
 
         ctx.fillStyle = ptrColor;
         ctx.beginPath();
-        ctx.roundRect(ptrX - txtWidth / 2, isTop ? ptrY - 14 : ptrY, txtWidth, 22, 6);
+        ctx.roundRect(ptrX - txtWidth / 2, isTop ? ptrY - 14 : ptrY, txtWidth, 24, 8);
         ctx.fill();
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#090d16';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(ptr.label, ptrX, isTop ? ptrY - 3 : ptrY + 11);
+        ctx.fillText(ptr.label, ptrX, isTop ? ptrY - 2 : ptrY + 12);
 
-        // Pointer triangle
+        // Triangle tip
         ctx.beginPath();
         if (isTop) {
           ctx.moveTo(ptrX, y - 4);
@@ -522,12 +781,12 @@ function renderAction(
 
       ctx.font = '700 22px Georgia, Cambria, serif';
       const textWidth = Math.max(ctx.measureText(text).width, 240);
-      const boxW = textWidth + 36;
-      const boxH = subtext ? 68 : 48;
+      const boxW = textWidth + 40;
+      const boxH = subtext ? 70 : 50;
 
       ctx.beginPath();
-      ctx.roundRect(x, y, boxW, boxH, 10);
-      ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+      ctx.roundRect(x, y, boxW, boxH, 12);
+      ctx.fillStyle = isDark ? 'rgba(30, 41, 59, 0.7)' : '#f8fafc';
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = isDark ? '#818cf8' : '#6366f1';
@@ -537,12 +796,12 @@ function renderAction(
       ctx.fillStyle = isDark ? '#e0e7ff' : '#3730a3';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, x + 18, y + (subtext ? 22 : boxH / 2));
+      ctx.fillText(text, x + 20, y + (subtext ? 24 : boxH / 2));
 
       if (subtext) {
         ctx.font = '500 12px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-        ctx.fillText(subtext, x + 18, y + 48);
+        ctx.fillText(subtext, x + 20, y + 50);
       }
       break;
     }
@@ -552,18 +811,18 @@ function renderAction(
       const x = action.x || 80;
       const y = action.y || 100;
 
-      ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+      ctx.font = '700 13px system-ui, -apple-system, sans-serif';
       const textWidth = ctx.measureText(text).width;
-      const paddingX = 14;
-      const h = 28;
+      const paddingX = 16;
+      const h = 30;
       const w = textWidth + paddingX * 2;
 
       ctx.beginPath();
-      ctx.roundRect(x, y, w, h, 14);
-      ctx.fillStyle = action.bgColor || (isDark ? '#1e3a8a' : '#dbeafe');
+      ctx.roundRect(x, y, w, h, 15);
+      ctx.fillStyle = action.bgColor || (isDark ? 'rgba(56, 189, 248, 0.15)' : '#dbeafe');
       ctx.fill();
 
-      ctx.fillStyle = action.textColor || (isDark ? '#93c5fd' : '#1e40af');
+      ctx.fillStyle = action.textColor || (isDark ? '#38bdf8' : '#1e40af');
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, x + paddingX, y + h / 2);
@@ -575,10 +834,10 @@ function renderAction(
       const y = action.y || 100;
       const w = action.width || 100;
       const h = action.height || 60;
-      const color = action.color || '#f59e0b';
+      const color = action.color || '#38bdf8';
 
       ctx.beginPath();
-      ctx.roundRect(x - 4, y - 4, w + 8, h + 8, 10);
+      ctx.roundRect(x - 5, y - 5, w + 10, h + 10, 12);
       ctx.lineWidth = 3;
       ctx.strokeStyle = color;
       ctx.stroke();
@@ -634,5 +893,8 @@ function renderAction(
       ctx.restore();
       break;
     }
+
+    default:
+      break;
   }
 }
