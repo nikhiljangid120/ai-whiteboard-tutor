@@ -262,65 +262,76 @@ export const SAMPLE_LESSONS: Record<string, Lesson> = {
     topic: 'TCP Three-Way Handshake',
     title: 'Networking 101: The TCP 3-Way Handshake',
     overview: 'Explore how clients and servers establish reliable, connection-oriented communication using SYN, SYN-ACK, and ACK packet sequences.',
-    totalDuration: 105,
+    totalDuration: 60,
     scenes: [
       {
         id: 1,
         title: 'The Need for a Reliable Handshake',
-        duration: 22,
+        duration: 15,
         narration: 'Every time you open a webpage or make an API call over HTTPS, your device establishes a connection using TCP. Unlike UDP which just sprays packets into the void, TCP guarantees reliable, ordered packet delivery through the Three-Way Handshake.',
         keyConcept: 'TCP establishes sequence numbers so lost or out-of-order packets can be retransmitted.',
         actions: [
-          { type: 'title', timeOffset: 0, text: 'TCP 3-Way Handshake: Setup', fontSize: 26, color: '#38bdf8', y: 40 },
-          { type: 'box', timeOffset: 2, x: 100, y: 110, width: 140, height: 180, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'Client (Browser)' },
-          { type: 'box', timeOffset: 4, x: 480, y: 110, width: 140, height: 180, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Server (Cloud)' },
-          { type: 'text', timeOffset: 8, text: 'Client Port: 54321', fontSize: 13, color: '#94a3b8', x: 115, y: 180 },
-          { type: 'text', timeOffset: 10, text: 'Server Port: 443 (HTTPS)', fontSize: 13, color: '#94a3b8', x: 488, y: 180 },
-          { type: 'badge', timeOffset: 14, text: 'Goal: Synchronize Initial Sequence Numbers (ISN)', bgColor: 'rgba(56, 189, 248, 0.15)', textColor: '#38bdf8', x: 180, y: 310 }
+          { type: 'title', timeOffset: 0, text: 'TCP 3-Way Handshake: Setup', fontSize: 24, color: '#38bdf8', y: 40 },
+          { type: 'box', timeOffset: 1, x: 80, y: 110, width: 200, height: 160, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'Client (Browser)' },
+          { type: 'text', timeOffset: 3, text: '• IP: 192.168.1.10', fontSize: 13, color: '#7dd3fc', x: 100, y: 175 },
+          { type: 'text', timeOffset: 4, text: '• Port: 54321 (Ephemeral)', fontSize: 13, color: '#94a3b8', x: 100, y: 205 },
+          { type: 'badge', timeOffset: 5, text: 'State: CLOSED', bgColor: 'rgba(148, 163, 184, 0.15)', textColor: '#94a3b8', x: 100, y: 235 },
+          { type: 'box', timeOffset: 2, x: 500, y: 110, width: 200, height: 160, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Server (Cloud HTTPS)' },
+          { type: 'text', timeOffset: 4, text: '• IP: 104.21.5.88', fontSize: 13, color: '#6ee7b7', x: 520, y: 175 },
+          { type: 'text', timeOffset: 5, text: '• Port: 443 (Listening)', fontSize: 13, color: '#94a3b8', x: 520, y: 205 },
+          { type: 'badge', timeOffset: 6, text: 'State: LISTEN', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 520, y: 235 },
+          { type: 'badge', timeOffset: 8, text: 'Goal: Synchronize Initial Sequence Numbers (ISN)', bgColor: 'rgba(56, 189, 248, 0.2)', textColor: '#38bdf8', x: 220, y: 310 }
         ]
       },
       {
         id: 2,
         title: 'Step 1: SYN (Synchronize)',
-        duration: 22,
+        duration: 15,
         narration: 'Step one: The client sends a SYN packet to the server. SYN stands for synchronize. The client generates a random Initial Sequence Number, let us say Sequence equals 100. The client enters the SYN-SENT state.',
         keyConcept: 'Packet 1: Client -> Server | Flag: SYN | Seq = X',
         actions: [
-          { type: 'title', timeOffset: 0, text: 'Step 1: Client Sends SYN', fontSize: 24, color: '#60a5fa', y: 40 },
-          { type: 'box', timeOffset: 1, x: 100, y: 100, width: 130, height: 90, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'Client' },
-          { type: 'box', timeOffset: 1, x: 490, y: 100, width: 130, height: 90, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Server' },
-          { type: 'arrow', timeOffset: 3, fromX: 235, fromY: 135, toX: 485, toY: 135, label: 'SYN: Seq = 100', color: '#60a5fa' },
-          { type: 'badge', timeOffset: 7, text: 'Client State: SYN-SENT', bgColor: 'rgba(96, 165, 250, 0.2)', textColor: '#93c5fd', x: 100, y: 220 },
-          { type: 'text', timeOffset: 11, text: '• Client proposes initial sequence number = 100', fontSize: 14, color: '#cbd5e1', x: 100, y: 270 },
-          { type: 'text', timeOffset: 14, text: '• Server receives packet and validates port 443', fontSize: 14, color: '#94a3b8', x: 100, y: 300 }
+          { type: 'title', timeOffset: 0, text: 'Step 1: Client Sends SYN ⟶', fontSize: 24, color: '#60a5fa', y: 40 },
+          { type: 'box', timeOffset: 0.5, x: 80, y: 110, width: 200, height: 150, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'Client (Browser)' },
+          { type: 'badge', timeOffset: 1, text: 'State: SYN-SENT', bgColor: 'rgba(96, 165, 250, 0.25)', textColor: '#93c5fd', x: 110, y: 180 },
+          { type: 'box', timeOffset: 0.5, x: 500, y: 110, width: 200, height: 150, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.1)', label: 'Server (Cloud)' },
+          { type: 'badge', timeOffset: 1, text: 'State: LISTEN', bgColor: 'rgba(16, 185, 129, 0.2)', textColor: '#34d399', x: 540, y: 180 },
+          { type: 'arrow', timeOffset: 2, fromX: 280, fromY: 180, toX: 500, toY: 180, label: 'SYN: Seq = 100', color: '#60a5fa' },
+          { type: 'text', timeOffset: 5, text: '• Client proposes Initial Sequence Number (ISN) = 100', fontSize: 14, color: '#cbd5e1', x: 80, y: 295 },
+          { type: 'text', timeOffset: 7, text: '• In transit across Internet router hops...', fontSize: 13, color: '#94a3b8', x: 80, y: 325 }
         ]
       },
       {
         id: 3,
         title: 'Step 2: SYN-ACK (Synchronize-Acknowledge)',
-        duration: 25,
+        duration: 15,
         narration: 'Step two: The server receives the SYN. It acknowledges the client sequence number by setting ACK equal to 101. At the same time, the server generates its own random sequence number, say 300, and sends both in a SYN-ACK packet.',
         keyConcept: 'Packet 2: Server -> Client | Flags: SYN + ACK | Seq = Y, Ack = X + 1',
         actions: [
-          { type: 'title', timeOffset: 0, text: 'Step 2: Server Responds SYN-ACK', fontSize: 24, color: '#34d399', y: 40 },
-          { type: 'arrow', timeOffset: 3, fromX: 485, fromY: 155, toX: 235, toY: 155, label: 'SYN-ACK: Seq = 300, Ack = 101', color: '#34d399' },
-          { type: 'badge', timeOffset: 7, text: 'Server State: SYN-RECEIVED', bgColor: 'rgba(52, 211, 153, 0.2)', textColor: '#34d399', x: 440, y: 220 },
-          { type: 'text', timeOffset: 11, text: '• Ack = 101 confirms receipt of client Seq 100', fontSize: 14, color: '#cbd5e1', x: 100, y: 270 },
-          { type: 'text', timeOffset: 15, text: '• Seq = 300 introduces server sequence stream', fontSize: 14, color: '#34d399', x: 100, y: 300 }
+          { type: 'title', timeOffset: 0, text: 'Step 2: ⟵ Server Responds SYN-ACK', fontSize: 24, color: '#34d399', y: 40 },
+          { type: 'box', timeOffset: 0.5, x: 80, y: 110, width: 200, height: 150, stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.1)', label: 'Client (Browser)' },
+          { type: 'badge', timeOffset: 1, text: 'State: SYN-SENT', bgColor: 'rgba(96, 165, 250, 0.25)', textColor: '#93c5fd', x: 110, y: 180 },
+          { type: 'box', timeOffset: 0.5, x: 500, y: 110, width: 200, height: 150, stroke: '#34d399', fill: 'rgba(52, 211, 153, 0.15)', label: 'Server (Cloud)' },
+          { type: 'badge', timeOffset: 2, text: 'State: SYN-RECEIVED', bgColor: 'rgba(52, 211, 153, 0.25)', textColor: '#34d399', x: 520, y: 180 },
+          { type: 'arrow', timeOffset: 2.5, fromX: 500, fromY: 180, toX: 280, toY: 180, label: 'SYN-ACK: Seq = 300, Ack = 101', color: '#34d399' },
+          { type: 'text', timeOffset: 5, text: '• Ack = 101 confirms receipt of client Seq 100 (100 + 1)', fontSize: 14, color: '#cbd5e1', x: 80, y: 295 },
+          { type: 'text', timeOffset: 7, text: '• Server introduces its own independent sequence = 300', fontSize: 14, color: '#34d399', x: 80, y: 325 }
         ]
       },
       {
         id: 4,
         title: 'Step 3: ACK & Connection Established',
-        duration: 22,
+        duration: 15,
         narration: 'Step three: The client receives the SYN-ACK, increments the server sequence to Ack equals 301, and sends back a final ACK packet. Both sides are now in the ESTABLISHED state, and HTTP data can begin streaming immediately!',
         keyConcept: 'Packet 3: Client -> Server | Flag: ACK | Ack = Y + 1 ⟶ ESTABLISHED',
         actions: [
-          { type: 'title', timeOffset: 0, text: 'Step 3: Final ACK ⟶ ESTABLISHED', fontSize: 24, color: '#10b981', y: 40 },
-          { type: 'arrow', timeOffset: 3, fromX: 235, fromY: 180, toX: 485, toY: 180, label: 'ACK: Ack = 301', color: '#10b981' },
-          { type: 'badge', timeOffset: 7, text: 'BOTH SIDES: ESTABLISHED', bgColor: 'rgba(16, 185, 129, 0.3)', textColor: '#34d399', x: 260, y: 240 },
-          { type: 'icon', timeOffset: 10, iconType: 'check', x: 360, y: 290, color: '#10b981' },
-          { type: 'text', timeOffset: 13, text: 'TLS / HTTPS Handshake & Data Transfer can now begin!', fontSize: 15, bold: true, color: '#f8fafc', x: 140, y: 340 }
+          { type: 'title', timeOffset: 0, text: 'Step 3: Final ACK ⟶ ESTABLISHED!', fontSize: 24, color: '#10b981', y: 40 },
+          { type: 'box', timeOffset: 0.5, x: 80, y: 110, width: 200, height: 150, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.15)', label: 'Client (ESTABLISHED)' },
+          { type: 'badge', timeOffset: 1, text: 'State: ESTABLISHED', bgColor: 'rgba(16, 185, 129, 0.3)', textColor: '#34d399', x: 100, y: 180 },
+          { type: 'box', timeOffset: 0.5, x: 500, y: 110, width: 200, height: 150, stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.15)', label: 'Server (ESTABLISHED)' },
+          { type: 'badge', timeOffset: 1, text: 'State: ESTABLISHED', bgColor: 'rgba(16, 185, 129, 0.3)', textColor: '#34d399', x: 520, y: 180 },
+          { type: 'arrow', timeOffset: 2, fromX: 280, fromY: 180, toX: 500, toY: 180, label: 'ACK: Ack = 301', color: '#10b981' },
+          { type: 'badge', timeOffset: 5, text: '✓ 3-Way Handshake Complete: Full-Duplex Socket Ready', bgColor: 'rgba(16, 185, 129, 0.25)', textColor: '#34d399', x: 180, y: 295 },
+          { type: 'text', timeOffset: 7, text: 'TLS 1.3 cryptographic handshake & HTTP/2 payload transmission begin now!', fontSize: 14, color: '#f8fafc', x: 130, y: 335, bold: true }
         ]
       }
     ],

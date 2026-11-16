@@ -10,7 +10,9 @@ import {
   FastForward,
   Rewind,
   Sparkles,
-  Layers
+  Layers,
+  SkipBack,
+  SkipForward
 } from 'lucide-react';
 import { LessonScene } from '@/types/lesson';
 
@@ -28,6 +30,8 @@ interface LessonControlsProps {
   onSkip: (delta: number) => void;
   onRestart: () => void;
   onJumpScene: (index: number) => void;
+  onNextScene?: () => void;
+  onPrevScene?: () => void;
   onChangeRate: (rate: number) => void;
   onToggleMute: () => void;
 }
@@ -46,6 +50,8 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
   onSkip,
   onRestart,
   onJumpScene,
+  onNextScene,
+  onPrevScene,
   onChangeRate,
   onToggleMute
 }) => {
@@ -118,28 +124,39 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
       {/* 2. Main Playback Controls Dock */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/5">
         {/* Left Playback Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onRestart}
-            className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-2xl transition"
+            className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-2xl transition"
             title="Restart Lesson (0:00)"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
 
+          {onPrevScene && (
+            <button
+              onClick={onPrevScene}
+              disabled={currentSceneIndex === 0}
+              className="p-2 text-slate-400 hover:text-cyan-400 disabled:opacity-30 hover:bg-white/10 rounded-2xl transition"
+              title="Previous Scene"
+            >
+              <SkipBack className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={() => onSkip(-5)}
-            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
+            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
             title="Rewind 5 seconds"
           >
             <Rewind className="w-4 h-4" />
-            <span className="hidden sm:inline font-mono">-5s</span>
+            <span className="hidden sm:inline font-mono text-[11px]">-5s</span>
           </button>
 
           {/* Primary Glow Play/Pause Button */}
           <button
             onClick={onTogglePlay}
-            className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.35)] transition transform active:scale-95 text-xs sm:text-sm tracking-wide"
+            className="px-5 sm:px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.35)] transition transform active:scale-95 text-xs sm:text-sm tracking-wide"
           >
             {isPlaying ? (
               <>
@@ -149,19 +166,30 @@ export const LessonControls: React.FC<LessonControlsProps> = ({
             ) : (
               <>
                 <Play className="w-4 h-4 fill-white" />
-                <span>{currentTime >= totalDuration ? 'Replay' : 'Play Lesson'}</span>
+                <span>{currentTime >= totalDuration ? 'Replay' : 'Play'}</span>
               </>
             )}
           </button>
 
           <button
             onClick={() => onSkip(5)}
-            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
+            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/10 rounded-2xl transition flex items-center gap-1 text-xs"
             title="Forward 5 seconds"
           >
-            <span className="hidden sm:inline font-mono">+5s</span>
+            <span className="hidden sm:inline font-mono text-[11px]">+5s</span>
             <FastForward className="w-4 h-4" />
           </button>
+
+          {onNextScene && (
+            <button
+              onClick={onNextScene}
+              disabled={currentSceneIndex >= scenes.length - 1}
+              className="p-2 text-slate-400 hover:text-cyan-400 disabled:opacity-30 hover:bg-white/10 rounded-2xl transition"
+              title="Next Scene"
+            >
+              <SkipForward className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Right Dock: Voice & Speed Selector */}

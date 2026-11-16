@@ -28,6 +28,10 @@ interface WhiteboardCanvasProps {
   isPlaying: boolean;
   isDarkBoard?: boolean;
   onToggleDarkBoard?: () => void;
+  onNextScene?: () => void;
+  onPrevScene?: () => void;
+  currentSceneIndex?: number;
+  totalScenes?: number;
 }
 
 export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
@@ -35,7 +39,11 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   sceneElapsedTime,
   isPlaying,
   isDarkBoard = true,
-  onToggleDarkBoard
+  onToggleDarkBoard,
+  onNextScene,
+  onPrevScene,
+  currentSceneIndex = 0,
+  totalScenes = 1
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -192,9 +200,19 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
 
     ctx.restore(); // restore scaled context
 
-    // Floating Live Audio Waveform (Tutor Presence Indicator)
-    if (isPlaying) {
-      renderAudioVisualizer(ctx, width, height, isDarkBoard, tick);
+    // Floating Live Subtitle & Equalizer Bar (Real-Time Synchronized Speech Display)
+    if (currentScene && currentScene.narration) {
+      renderTutorSubtitles(
+        ctx,
+        width,
+        height,
+        isDarkBoard,
+        currentScene.narration,
+        sceneElapsedTime,
+        currentScene.duration || 15,
+        isPlaying,
+        tick
+      );
     }
 
     ctx.restore();
@@ -314,17 +332,43 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     >
       {/* Top Floating Glass Command Bar */}
       <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        {/* Left: Live Session Indicator */}
-        <div className="pointer-events-auto flex items-center gap-2.5 bg-slate-900/85 dark:bg-slate-900/90 text-white backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-lg text-xs font-semibold">
+        {/* Left: Live Session Indicator with Scene Navigation */}
+        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 dark:bg-slate-900/90 text-white backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-lg text-xs font-semibold">
           <div className="relative flex items-center justify-center">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute" />
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 relative" />
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping absolute" />
+            <span className="w-2 h-2 rounded-full bg-cyan-500 relative" />
           </div>
-          <span className="tracking-wide">AI Whiteboard</span>
+          <span className="tracking-wide text-cyan-400">AI Whiteboard</span>
+
           {currentScene && (
-            <span className="text-slate-400 font-normal border-l border-slate-700 pl-2">
-              Scene {currentScene.id} • {currentScene.title}
-            </span>
+            <div className="flex items-center gap-1.5 border-l border-slate-700/80 pl-2">
+              {onPrevScene && (
+                <button
+                  onClick={onPrevScene}
+                  disabled={currentSceneIndex === 0}
+                  className="px-1 py-0.5 rounded text-slate-300 hover:text-cyan-300 disabled:opacity-20 transition text-sm font-bold"
+                  title="Previous Scene"
+                >
+                  ‹
+                </button>
+              )}
+              <span className="text-cyan-300 font-bold">
+                {currentSceneIndex + 1}/{totalScenes}
+              </span>
+              {onNextScene && (
+                <button
+                  onClick={onNextScene}
+                  disabled={currentSceneIndex >= totalScenes - 1}
+                  className="px-1 py-0.5 rounded text-slate-300 hover:text-cyan-300 disabled:opacity-20 transition text-sm font-bold"
+                  title="Next Scene"
+                >
+                  ›
+                </button>
+              )}
+              <span className="hidden sm:inline text-slate-300 font-normal truncate max-w-[180px]">
+                • {currentScene.title}
+              </span>
+            </div>
           )}
         </div>
 
@@ -473,51 +517,83 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
 };
 
 /**
- * Animated Real-Time Voice Waveform Indicator
+ * Animated Real-Time Voice Subtitles and Equalizer Indicator
  */
-function renderAudioVisualizer(
+function renderTutorSubtitles(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   isDark: boolean,
+  narration: string,
+  elapsed: number,
+  duration: number,
+  isPlaying: boolean,
   tick: number
 ) {
+  if (!narration) return;
   ctx.save();
-  const boxW = 160;
-  const boxH = 34;
-  const boxX = 24;
-  const boxY = height - boxH - 20;
 
-  // Frosted pill container
+  // Extract spoken sentences to display active phrase
+  const rawSentences = narration.match(/[^.!?]+[.!?]+/g) || [narration];
+  const sentences = rawSentences.map((s) => s.trim()).filter((s) => s.length > 0);
+  const numSentences = Math.max(sentences.length, 1);
+  const sentenceDuration = duration / numSentences;
+  const activeSentenceIndex = Math.min(Math.floor(elapsed / sentenceDuration), numSentences - 1);
+  const currentSentence = (sentences[activeSentenceIndex] || narration).trim();
+
+  // Floating Frosted Glass Subtitle Banner at bottom of canvas
+  ctx.font = '600 13px system-ui, -apple-system, sans-serif';
+  const textWidth = ctx.measureText(currentSentence).width;
+  const barW = Math.min(Math.max(textWidth + 80, 320), width - 40);
+  const barH = 38;
+  const barX = (width - barW) / 2;
+  const barY = height - barH - 16;
+
+  // Frosted Pill Container
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 17);
-  ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.9)';
+  ctx.roundRect(barX, barY, barW, barH, 19);
+  ctx.fillStyle = isDark ? 'rgba(9, 13, 22, 0.88)' : 'rgba(255, 255, 255, 0.94)';
   ctx.fill();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(99, 102, 241, 0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(99, 102, 241, 0.35)';
+  if (isDark) {
+    ctx.shadowColor = 'rgba(56, 189, 248, 0.18)';
+    ctx.shadowBlur = 12;
+  }
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  // Pulse icon
-  ctx.fillStyle = isDark ? '#38bdf8' : '#6366f1';
-  ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Tutor Voice', boxX + 14, boxY + boxH / 2);
-
-  // Equalizer Bars
-  const barsX = boxX + 90;
-  const barsCount = 7;
+  // Real-Time Animated Equalizer Bars on the Left
+  const barsX = barX + 16;
+  const barsCount = 5;
   for (let i = 0; i < barsCount; i++) {
-    const wave = Math.sin(tick * 0.18 + i * 0.7) * 0.5 + 0.5;
-    const barH = 5 + wave * 14;
-    const barX = barsX + i * 8;
-    const barY = boxY + (boxH - barH) / 2;
+    const wave = isPlaying ? Math.sin(tick * 0.2 + i * 0.75) * 0.5 + 0.5 : 0.2;
+    const barH = 4 + wave * 15;
+    const barSubX = barsX + i * 6;
+    const barSubY = barY + (barH - barH) / 2;
 
     ctx.beginPath();
-    ctx.roundRect(barX, barY, 4, barH, 2);
+    ctx.roundRect(barSubX, barSubY, 3.5, barH, 2);
     ctx.fillStyle = isDark ? '#38bdf8' : '#6366f1';
     ctx.fill();
   }
+
+  // Active Sentence Text with Safe Clipping
+  ctx.font = '600 12.5px system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  let displayText = currentSentence;
+  const maxAvailableTextWidth = barW - 65;
+  if (ctx.measureText(displayText).width > maxAvailableTextWidth) {
+    while (ctx.measureText(displayText + '...').width > maxAvailableTextWidth && displayText.length > 10) {
+      displayText = displayText.slice(0, -4);
+    }
+    displayText += '...';
+  }
+
+  ctx.fillText(displayText, barX + 52, barY + barH / 2);
 
   ctx.restore();
 }
@@ -625,11 +701,26 @@ function renderAction(
       ctx.shadowBlur = 0;
 
       if (action.label) {
-        ctx.font = '700 14px system-ui, -apple-system, sans-serif';
+        // Modern card header strip
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, 28, [radius, radius, 0, 0]);
+        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)';
+        ctx.fill();
+
+        // 3 mini terminal dots on left
+        const dotColors = ['#ef4444', '#f59e0b', '#10b981'];
+        dotColors.forEach((dColor, i) => {
+          ctx.beginPath();
+          ctx.arc(x + 14 + i * 8, y + 14, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = dColor;
+          ctx.fill();
+        });
+
+        ctx.font = '700 12.5px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = action.stroke || defaultStroke;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(action.label, x + w / 2, y + 22);
+        ctx.fillText(action.label, x + w / 2, y + 14);
       }
       ctx.restore();
       break;
@@ -711,6 +802,29 @@ function renderAction(
         );
         ctx.closePath();
         ctx.fill();
+
+        // High-Tech Animated Packet / Signal Pulse Flowing Along Wire
+        const packetT = ((tick * 0.025) % 1);
+        const px = fx + (tx - fx) * packetT;
+        const py = fy + (ty - fy) * packetT;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+
+        // Glowing particle tail
+        const tailX = px - Math.cos(angle) * 7;
+        const tailY = py - Math.sin(angle) * 7;
+        ctx.beginPath();
+        ctx.arc(tailX, tailY, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.restore();
       }
 
       if (action.label && easeProgress > 0.4) {

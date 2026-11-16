@@ -58,6 +58,8 @@ export default function Home() {
     togglePlay,
     seekTo,
     jumpScene,
+    nextScene,
+    prevScene,
     skip,
     restart,
     setPlaybackRate,
@@ -476,6 +478,10 @@ export default function Home() {
                     isPlaying={isPlaying}
                     isDarkBoard={isDarkBoard}
                     onToggleDarkBoard={() => setIsDarkBoard(!isDarkBoard)}
+                    onNextScene={nextScene}
+                    onPrevScene={prevScene}
+                    currentSceneIndex={currentSceneIndex}
+                    totalScenes={currentLesson.scenes.length}
                   />
                 </div>
 
@@ -494,6 +500,8 @@ export default function Home() {
                   onSkip={skip}
                   onRestart={restart}
                   onJumpScene={jumpScene}
+                  onNextScene={nextScene}
+                  onPrevScene={prevScene}
                   onChangeRate={setPlaybackRate}
                   onToggleMute={toggleMute}
                 />

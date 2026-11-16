@@ -30,6 +30,10 @@ export function useLessonPlayer(lesson: Lesson | null) {
   const isPlayingRef = useRef<boolean>(false);
   const currentTimeRef = useRef<number>(0);
   const playbackRateRef = useRef<number>(1);
+  const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sceneIndexRef = useRef<number>(0);
+  const sceneOffsetsRef = useRef<{ index: number; start: number; end: number; duration: number }[]>([]);
+  const lessonRef = useRef<Lesson | null>(lesson);
 
   // Keep refs in sync for animation loop
   useEffect(() => {
@@ -43,6 +47,10 @@ export function useLessonPlayer(lesson: Lesson | null) {
   useEffect(() => {
     playbackRateRef.current = playbackRate;
   }, [playbackRate]);
+
+  useEffect(() => {
+    lessonRef.current = lesson;
+  }, [lesson]);
 
   // Compute total duration and scene boundary timestamps
   const { totalDuration, sceneOffsets } = useMemo(() => {
@@ -67,6 +75,10 @@ export function useLessonPlayer(lesson: Lesson | null) {
     return { totalDuration: cumulative, sceneOffsets: offsets };
   }, [lesson]);
 
+  useEffect(() => {
+    sceneOffsetsRef.current = sceneOffsets;
+  }, [sceneOffsets]);
+
   // Find active scene based on currentTime
   const currentSceneIndex = useMemo(() => {
     if (!sceneOffsets.length) return 0;
@@ -85,6 +97,11 @@ export function useLessonPlayer(lesson: Lesson | null) {
     if (!sceneOffsets[currentSceneIndex]) return 0;
     return Math.max(0, currentTime - sceneOffsets[currentSceneIndex].start);
   }, [currentTime, currentSceneIndex, sceneOffsets]);
+
+  // Sync sceneIndexRef
+  useEffect(() => {
+    sceneIndexRef.current = currentSceneIndex;
+  }, [currentSceneIndex]);
 
   // Check Web Speech API support
   useEffect(() => {
@@ -113,6 +130,10 @@ export function useLessonPlayer(lesson: Lesson | null) {
 
   // Stop any active speech
   const stopSpeech = useCallback(() => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -159,6 +180,27 @@ export function useLessonPlayer(lesson: Lesson | null) {
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
+
+      // Auto-advance scene smoothly when speech finishes (eliminating dead silence between scenes)
+      utterance.onend = () => {
+        if (autoAdvanceTimerRef.current) {
+          clearTimeout(autoAdvanceTimerRef.current);
+          autoAdvanceTimerRef.current = null;
+        }
+        const scenes = lessonRef.current?.scenes || [];
+        const currentIdx = sceneIndexRef.current;
+        if (isPlayingRef.current && currentIdx < scenes.length - 1) {
+          autoAdvanceTimerRef.current = setTimeout(() => {
+            if (isPlayingRef.current) {
+              const nextIdx = sceneIndexRef.current + 1;
+              const nextStart = sceneOffsetsRef.current[nextIdx]?.start;
+              if (nextStart !== undefined) {
+                setCurrentTime(nextStart);
+              }
+            }
+          }, 1200);
+        }
+      };
 
       currentUtteranceRef.current = utterance;
       // Chrome Windows SpeechSynthesis requires a tiny timeout after cancel() to avoid dropped utterances
@@ -273,6 +315,19 @@ export function useLessonPlayer(lesson: Lesson | null) {
     [sceneOffsets, seekTo]
   );
 
+  const nextScene = useCallback(() => {
+    const scenes = lesson?.scenes || [];
+    if (currentSceneIndex < scenes.length - 1) {
+      jumpScene(currentSceneIndex + 1);
+    }
+  }, [currentSceneIndex, lesson, jumpScene]);
+
+  const prevScene = useCallback(() => {
+    if (currentSceneIndex > 0) {
+      jumpScene(currentSceneIndex - 1);
+    }
+  }, [currentSceneIndex, jumpScene]);
+
   const skip = useCallback(
     (deltaSeconds: number) => {
       seekTo(currentTime + deltaSeconds);
@@ -338,6 +393,8 @@ export function useLessonPlayer(lesson: Lesson | null) {
     togglePlay,
     seekTo,
     jumpScene,
+    nextScene,
+    prevScene,
     skip,
     restart,
     setPlaybackRate: changeSpeed,
