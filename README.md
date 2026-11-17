@@ -10,9 +10,10 @@ An end-to-end AI-powered interactive learning platform that teaches any topic th
 ## 🌟 Key Features
 
 ### 1. 💬 Chat-First Topic Input & AI Curriculum Synthesis
-- Users can input any concept, from computer science algorithms (*Binary Search*, *QuickSort*) to biology (*Photosynthesis*) and mathematics (*Pythagorean Theorem*).
-- Uses Google Gemini AI (`gemini-2.5-flash`) with structured JSON schema output to break down topics into pedagogical scenes totaling ~90 to 120 seconds.
-- Includes pre-curated fallback flagship lessons so evaluators can test immediately with 1-click.
+- Users can input any concept, from computer science algorithms (*Binary Search*, *TCP Handshake*, *TypeScript*) to deep learning (*Neural Networks & Backprop*), biology (*Photosynthesis*), and mathematics (*Pythagorean Theorem*).
+- **Real-Time SSE Streaming Generation** (`/api/generate-lesson-stream`): Emits Scene 1 in **< 1.8 seconds** so the student begins listening and learning immediately while subsequent scenes buffer progressively in the background.
+- Powered by Google Gemini (`gemini-3.6-flash`, `gemini-3.1-flash-lite`, `gemini-3.5-flash-lite`) with automatic multi-model failover and strict JSON schema generation.
+- Includes pre-curated fallback flagship lessons so evaluators can test immediately with 1-click and zero latency.
 
 ### 2. 🎨 Interactive Step-by-Step Whiteboard Canvas
 - **High-DPI Retina Rendering**: Crisp 800x450 (16:9) virtual canvas mapped smoothly to any display resolution.
@@ -23,19 +24,24 @@ An end-to-end AI-powered interactive learning platform that teaches any topic th
   - Concept boxes, flow arrows, cycles, status badges, and icon indicators.
 - **Interactive Tools**:
   - Pan and Zoom (0.6x to 2.5x) with drag controls.
+  - Interactive Learner Drawing: Pen with 5-color palette, Neon Highlighter, Laser pointer, and Clear.
   - Light Whiteboard vs Slate Chalkboard theme toggle.
   - One-click "Download Board as PNG" to save visual study notes.
   - Fullscreen canvas mode.
+  - Live Frosted Glass Subtitle Bar with active spoken sentence captioning and equalizer bars.
 
 ### 3. 🎙️ Synchronized Spoken Voice Narration
 - Uses browser Web Speech API for zero-latency, realistic voice narration.
 - Speech utterance is dynamically synchronized with the visual timeline clock.
+- **Instant Mid-Playback Speed Control**: Seamlessly adjust speed (`0.75x`, `1.0x`, `1.25x`, `1.5x`) mid-utterance without waiting for scene transitions.
+- **Intelligent Speech Auto-Advance**: Transitions smoothly to the next scene 1.2s after the tutor finishes speaking the narration, eliminating dead air.
 - When seeking or scrubbing, audio cancels and restarts accurately from the active timestamp.
-- Toggle voice mute or adjust speed (0.75x, 1.0x, 1.25x, 1.5x) on the fly.
+- Toggle voice mute on the fly.
 
 ### 4. ⏯️ Full Playback & Timeline Seeking
 - **Play / Pause / Resume**: Freeze-frame both voice and visuals simultaneously.
 - **Scrubbable Timeline**: Smooth seek bar with visual chapter ticks for each scene.
+- **Next & Previous Scene Jumps**: Skip instantly with `⏭` and `⏮` buttons on both playback dock and canvas header.
 - **5-Second Skip**: Instant ±5s rewind/forward buttons.
 - **Scene Chapter Pills**: Jump directly to any scene (e.g. *Step 1: Setup*, *Step 2: Midpoint*) with one click.
 - **Replay / Restart**: Reset to 0:00 with celebratory confetti on completion.
@@ -120,7 +126,7 @@ Rather than relying on fragile `setTimeout` callbacks, the engine uses a **decla
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/nikhiljangid/ai-whiteboard-tutor.git
+git clone https://github.com/nikhiljangid120/ai-whiteboard-tutor.git
 cd ai-whiteboard-tutor
 ```
 
